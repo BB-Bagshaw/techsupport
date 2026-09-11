@@ -32,6 +32,7 @@
   .callout { background:#fdecea; border-left:5px solid var(--red); padding:10px 16px; border-radius:6px; font-size:0.58em; margin-top:10px;}
   .checklist li { margin-bottom:0.4em; }
   .checklist li::marker { color: var(--blue); font-weight:bold; }
+  .note { font-size:0.4em; color:#999; margin-top:8px; }
   footer.slidefoot { position:absolute; bottom:8px; left:40px; font-size:0.35em; color:#aaa; }
 </style>
 </head>
@@ -72,24 +73,24 @@
 
 <section>
   <h2>Open Tickets: Aging, Not Draining</h2>
-  <div class="statline">n = <b>11,985</b> open tickets &nbsp;|&nbsp; Median age <b>66 days</b> &nbsp;|&nbsp; P90 <b>150.9 days</b> &nbsp;|&nbsp; <b>84.1%</b> exceed the 7-day policy</div>
+  <div class="statline">n = <b>11,987</b> open tickets &nbsp;|&nbsp; Median age <b>66.1 days</b> &nbsp;|&nbsp; P90 <b>150.9 days</b> &nbsp;|&nbsp; <b>84.6%</b> exceed the 7-day policy &nbsp;|&nbsp; 785 (6.5%) opened &lt;2 days ago, excluded</div>
   <div class="chart-wrap"><canvas id="openChart"></canvas></div>
 </section>
 
 <section>
   <h2>What the Shape Tells Us</h2>
   <p>If the auto-close policy were active, this histogram should show a cliff at day 7 and almost nothing surviving beyond it.</p>
-  <p>Instead, after an initial intake bump, volume settles into a <b>flat plateau of roughly 300&ndash;450 tickets per week</b>, sustained from around day 14 through day 150+.</p>
+  <p>Instead, after an initial intake bump, volume settles into a <b>flat plateau of roughly 300&ndash;450 tickets per week</b>, sustained from around day 14 through day 180.</p>
   <div class="kpi-row">
-    <div class="kpi red"><div class="val">84.1%</div><div class="lbl">of open tickets already past 7 days</div></div>
-    <div class="kpi red"><div class="val">66 days</div><div class="lbl">median age of the open backlog</div></div>
+    <div class="kpi red"><div class="val">84.6%</div><div class="lbl">of open tickets already past 7 days</div></div>
+    <div class="kpi red"><div class="val">66.1 days</div><div class="lbl">median age of the open backlog</div></div>
   </div>
   <p style="margin-top:10px;">Tickets aren't decaying out of the queue as they age &mdash; they're accumulating and stalling indefinitely once they miss the early window.</p>
 </section>
 
 <section>
   <h2>Closed Tickets: Time-to-Close</h2>
-  <div class="statline">n = <b>103,487</b> closed tickets &nbsp;|&nbsp; Median <b>8.9 days</b> &nbsp;|&nbsp; P90 <b>28.5 days</b> &nbsp;|&nbsp; <b>55.1%</b> took longer than 7 days</div>
+  <div class="statline">n = <b>103,493</b> closed tickets &nbsp;|&nbsp; Median <b>8.9 days</b> &nbsp;|&nbsp; P90 <b>28.5 days</b> &nbsp;|&nbsp; <b>55.1%</b> took longer than 7 days</div>
   <div class="chart-wrap"><canvas id="closedChart"></canvas></div>
 </section>
 
@@ -98,7 +99,7 @@
   <div class="grid2">
     <div>
       <h3>Fast resolvers</h3>
-      <div class="kpi"><div class="val">36.1%</div><div class="lbl">closed within 48 hours (37,362 tickets)</div></div>
+      <div class="kpi"><div class="val">36.1%</div><div class="lbl">closed within 48 hours (37,366 tickets)</div></div>
       <p style="margin-top:8px;">Loosely tracks anecdotal first-touch resolution rates. Needs validation against the actual first-touch custom field.</p>
     </div>
     <div>
@@ -138,11 +139,23 @@
 <script>
   Reveal.initialize({ hash:true, width:1100, height:700, margin:0.06, controls:true, progress:true });
 
-  const openLabels = ["0-14d","14-28d","28-42d","42-56d","56-70d","70-84d","84-98d","98-112d","112-126d","126-140d","140-154d","154-168d","168-182d"];
-  const openData   = [1330,430,395,360,355,310,315,330,365,420,395,335,295];
+  // Bin counts read directly off the validated Power BI R visuals (approximate bar-height reads).
+  const openBinEdges  = [0,14,28,42,56,70,84,98,112,126,140,154,168,182];
+  const openLabels    = ["0-14d","14-28d","28-42d","42-56d","56-70d","70-84d","84-98d","98-112d","112-126d","126-140d","140-154d","154-168d","168-182d"];
+  const openData      = [1075,1385,440,395,350,315,310,320,350,370,415,440,470];
 
-  const closedLabels = ["0-5d","5-10d","10-15d","15-20d","20-25d","25-30d","30-35d","35-40d","40-45d","45-50d","50-55d","55-60d"];
-  const closedData   = [1300,2600,3800,1450,900,750,400,150,90,100,80,90];
+  const closedBinEdges  = [0,5,10,15,20,25,30,35,40,45,50,55,60];
+  const closedLabels    = ["0-5d","5-10d","10-15d","15-20d","20-25d","25-30d","30-35d","35-40d","40-45d","45-50d","50-55d","55-60d"];
+  const closedData      = [1320,2320,3900,1650,1470,1080,870,1150,1720,1180,650,480];
+
+  const thresholdDays = 7;
+
+  function findThresholdIndex(binEdges, threshold){
+    for (let i = 0; i < binEdges.length - 1; i++){
+      if (threshold >= binEdges[i] && threshold < binEdges[i+1]) return i;
+    }
+    return -1;
+  }
 
   function makeBarChart(ctx, labels, data, color, thresholdIndex, xLabel, yLabel){
     return new Chart(ctx, {
@@ -153,17 +166,4 @@
         plugins:{ legend:{ display:false },
           tooltip:{ callbacks:{ label:(c)=> c.parsed.y.toLocaleString()+' tickets' } } },
         scales:{
-          x:{ title:{ display:true, text:xLabel, font:{size:13,weight:'bold'} }, ticks:{font:{size:11}} },
-          y:{ title:{ display:true, text:yLabel, font:{size:13,weight:'bold'} }, ticks:{ callback:(v)=>v.toLocaleString(), font:{size:11} } }
-        }
-      }
-    });
-  }
-
-  window.addEventListener('load', function(){
-    makeBarChart(document.getElementById('openChart').getContext('2d'), openLabels, openData, '#3B7DBF', 1, 'Ticket Age So Far', 'Number of Open Tickets');
-    makeBarChart(document.getElementById('closedChart').getContext('2d'), closedLabels, closedData, '#3B7DBF', 1, 'Time to Close', 'Number of Closed Tickets');
-  });
-</script>
-</body>
-</html>
+          x:{ title:{ display:true, text:xLabel, font:{size:13,weight:'bold'} }, ticks:{font:{size:11}} 
