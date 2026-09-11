@@ -126,35 +126,66 @@
     <b>15</b> sub-teams reviewed &nbsp;&nbsp; Overall open-ticket median <b>66.1 days</b> &nbsp;&nbsp; <b>100%</b> of teams exceed the 7-day target
   </div>
   <div class="chart-wrap"><canvas id="subTeamBoxChart"></canvas></div>
-  <div class="note">Log scale, red dashed line = 7-day target. Non-closed (open) tickets only.</div>
+  <div class="note">Computed directly from case-level export (n=11,982 open tickets). Log scale, red dashed line = 7-day target.</div>
 </section>
 
 <section>
   <h2>No Team Meets the Target &mdash; But the Gap Isn't Uniform</h2>
   <ul class="checklist">
     <li>Every sub-team's median open-ticket age sits above the 7-day target, confirming this is a <b>systemic gap</b>, not one team's performance issue.</li>
-    <li><b>Tier 2 US Bravo, Tier 3 APAC, and Tier 3 US</b> carry the oldest and most inconsistent backlogs, median ages above 90 days with wide interquartile ranges.</li>
-    <li><b>Tier 2 DACH</b> is the exception: median age of roughly 3 days, tightest distribution of any team, proof the target is achievable under current tooling.</li>
+    <li><b>Tier 2 US Bravo (99.9d), Tier 3 APAC (96.3d), and Tier 3 US (94.9d)</b> carry the oldest and most inconsistent backlogs.</li>
+    <li><b>Tier 2 DACH</b> is the exception: median age of <b>2.7 days</b>, tightest distribution of any team, proof the target is achievable under current tooling.</li>
   </ul>
-  <div class="callout">Tall, inconsistent boxes (e.g. Tier 2 US Alpha) paired with a cluster of very young outlier tickets suggest a <b>bimodal pattern</b>: new intake is handled reasonably, but a portion of the backlog stalls indefinitely and is never cleared.</div>
+  <div class="callout">Tall, inconsistent boxes (e.g. Tier 2 US Alpha, Tier 2 APAC) paired with very young outlier tickets suggest a <b>bimodal pattern</b>: new intake is handled reasonably, but a portion of the backlog stalls indefinitely and is never cleared.</div>
 </section>
 
 <section>
-  <h2>Agent-Level View &mdash; Internal Working Reference</h2>
-  <p>Same method applied at the individual-agent level, restricted to agents with 20+ tickets to avoid small-sample distortion.</p>
+  <h2>Agent-Level View: 71 Agents, Full Spectrum</h2>
+  <div class="statline">
+    Agents with 20+ open tickets (n=71) &nbsp;&nbsp; Overall median <b>66.1 days</b> &nbsp;&nbsp; Range: 2.7 days to 140.9 days
+  </div>
   <div class="chart-wrap">
     <img src="images/agent-boxplot.png" alt="Ticket Age by Agent, log scale box plot" style="width:100%; height:100%; object-fit:contain;">
   </div>
-  <div class="scope">For director and data-engineering review only. Individual performance callouts held pending team-level discussion; not included in COO-facing cut of this deck.</div>
+  <div class="note">Full population shown for context. Extremes broken out on the following two slides, computed directly from case-level export.</div>
+</section>
+
+<section>
+  <h2>Best of the Best</h2>
+  <div class="statline">
+    Fastest 12 of 71 qualifying agents by median open-ticket age &nbsp;&nbsp; Org median <b>66.1 days</b> &nbsp;&nbsp; 7-day target shown in red
+  </div>
+  <div class="chart-wrap"><canvas id="bestAgentChart"></canvas></div>
+  <div class="note">Proof point: the 7-day target is achievable today, under current tooling and staffing, by a meaningful group of agents.</div>
+</section>
+
+<section>
+  <h2>Worst of the Worst</h2>
+  <div class="statline">
+    Slowest 12 of 71 qualifying agents by median open-ticket age &nbsp;&nbsp; Combined open backlog held by this group: <b>2,640</b> tickets
+  </div>
+  <div class="chart-wrap"><canvas id="worstAgentChart"></canvas></div>
+  <div class="callout">These 12 agents represent <b>16.9%</b> of qualifying headcount but hold <b>22.3%</b> of the total open backlog among agents with 20+ tickets.</div>
+</section>
+
+<section>
+  <h2>Case Data Is One Input, Not the Whole Picture</h2>
+  <ul class="checklist">
+    <li>This view reflects <b>ticket duration only</b>. It does not yet account for scheduled hours, time on phones, queue assignment complexity, or PTO/coverage gaps.</li>
+    <li>Partnering with <b>Business Process Management</b> to layer in workforce and scheduling data before drawing final conclusions on individual performance.</li>
+    <li>Goal: build a framework that separates <b>capacity/staffing problems</b> from <b>individual execution problems</b>, so the right fix gets applied to the right root cause.</li>
+  </ul>
+  <div class="scope">Case-level data establishes where the problem lives. Workforce data (next phase) will establish why.</div>
 </section>
 
 <section>
   <h2>Next Steps</h2>
   <ul class="checklist">
-    <li>Segment both distributions by <b>team, agent, and status</b> to see whether stalling is concentrated or systemic. <i>(Sub-team view now complete; see prior slides.)</i></li>
+    <li>Segment both distributions by <b>team, agent, and status</b> to see whether stalling is concentrated or systemic. <i>(Sub-team and agent extremes now complete; see prior slides.)</i></li>
     <li>Validate the 48-hour fast-close proxy against the true <b>first-touch resolution</b> custom field.</li>
     <li>Investigate the secondary peak around day 11&ndash;13 in the closed-ticket data, likely tied to a specific workflow step.</li>
     <li>Confirm with process owners whether a 7-day auto-close mechanism exists in the system today, or whether it's a stated policy with no technical enforcement.</li>
+    <li>Partner with Business Process Management to layer in scheduled hours, phone time, and coverage data against the worst-of-the-worst agent list.</li>
     <li>Pull Tier 2 DACH's workflow/staffing model as a benchmark case study for teams carrying the largest backlogs.</li>
   </ul>
   <div class="scope">This is a working analysis for internal review. Not yet positioned for COO-level presentation.</div>
@@ -244,6 +275,41 @@
     });
   }
 
+  function makeRankBarChart(ctx, labels, data, color, xLabel){
+    return new Chart(ctx, {
+      type: 'bar',
+      data: { labels: labels, datasets: [{ data: data, backgroundColor: color, borderRadius: 3 }] },
+      options: {
+        indexAxis: 'y',
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:false },
+          tooltip:{ callbacks:{ label:(c)=> c.parsed.x.toLocaleString()+' days median' } } },
+        scales:{
+          x:{ title:{ display:true, text:xLabel, font:{size:13,weight:'bold'} }, ticks:{font:{size:11}} },
+          y:{ ticks:{ font:{size:11} } }
+        }
+      },
+      plugins: [{
+        id: 'targetLineVert',
+        afterDraw: (chart) => {
+          const xScale = chart.scales.x;
+          const xPixel = xScale.getPixelForValue(7);
+          const ctx2 = chart.ctx;
+          ctx2.save();
+          ctx2.strokeStyle = '#C9302C';
+          ctx2.lineWidth = 2;
+          ctx2.setLineDash([6,4]);
+          ctx2.beginPath();
+          ctx2.moveTo(xPixel, chart.chartArea.top);
+          ctx2.lineTo(xPixel, chart.chartArea.bottom);
+          ctx2.stroke();
+          ctx2.setLineDash([]);
+          ctx2.restore();
+        }
+      }]
+    });
+  }
+
   const subTeamBoxData = {
     labels: ["Tier 2 US Bravo","Tier 3 APAC","Tier 3 US","Tier 2 US Alpha","BEAST US","Tier 1 CS",
              "Tier 1 EMEA","Tier 1 APAC","Tier 2 APAC","Tier 1 US","Tier 2 Nordic","Tier 3 EMEA",
@@ -256,23 +322,36 @@
       outlierColor: "#C9302C",
       itemRadius: 2,
       data: [
-        {min:0.6, q1:33,  median:100, q3:128, max:180},
-        {min:2.5, q1:40,  median:98,  q3:123, max:180},
-        {min:0.5, q1:56,  median:100, q3:135, max:180},
-        {min:0.5, q1:10,  median:98,  q3:125, max:180},
-        {min:0.5, q1:30,  median:93,  q3:125, max:180},
-        {min:0.5, q1:25,  median:85,  q3:120, max:180},
-        {min:0.5, q1:9,   median:58,  q3:122, max:180},
-        {min:6,   q1:6.5, median:45,  q3:105, max:180},
-        {min:9,   q1:9.5, median:42,  q3:125, max:180},
-        {min:7,   q1:7.5, median:25,  q3:95,  max:180},
-        {min:4.5, q1:5,   median:24,  q3:100, max:140},
-        {min:7,   q1:7.5, median:17,  q3:115, max:180},
-        {min:7,   q1:7.5, median:10,  q3:80,  max:180},
-        {min:5,   q1:5.5, median:6.5, q3:35,  max:130},
-        {min:0.9, q1:1,   median:2.7, q3:9.5, max:15}
+        {min:0.7, q1:31.9, median:99.9, q3:134.9, max:179.6},
+        {min:0.6, q1:37.2, median:96.3, q3:126.1, max:171.6},
+        {min:0.7, q1:54.4, median:94.9, q3:142.9, max:178.8},
+        {min:0.5, q1:10.9, median:93.0, q3:129.8, max:179.2},
+        {min:0.7, q1:28.9, median:86.3, q3:129.0, max:179.3},
+        {min:0.7, q1:25.1, median:76.8, q3:120.1, max:179.1},
+        {min:0.6, q1:8.2, median:58.5, q3:122.3, max:179.2},
+        {min:0.5, q1:6.5, median:42.6, q3:99.3, max:178.7},
+        {min:0.5, q1:8.7, median:38.6, q3:129.3, max:179.6},
+        {min:0.5, q1:7.0, median:25.0, q3:87.8, max:179.2},
+        {min:0.5, q1:4.3, median:24.0, q3:95.2, max:160.4},
+        {min:0.9, q1:7.1, median:16.6, q3:112.2, max:175.1},
+        {min:0.7, q1:6.8, median:11.0, q3:81.1, max:179.0},
+        {min:1.2, q1:4.2, median:7.2, q3:35.3, max:81.9},
+        {min:1.0, q1:2.2, median:2.7, q3:10.6, max:23.1}
       ]
     }]
+  };
+
+  // Computed directly from case-level export: agents with 20+ open tickets, sorted by median age.
+  const bestAgents = {
+    labels: ["Ella Eckert","Hunter Buehl","Steven Vu","Zachary Cash","Dev Waghela","Danial Mir",
+             "Lawren Richardson","Steven Song","Vera Krapivner","Jennifer Erhart","Anthony Basmadjian","Jesus Bernal"],
+    data: [2.7,3.0,3.0,3.1,4.3,5.6,6.9,7.0,7.1,7.4,7.8,7.8]
+  };
+
+  const worstAgents = {
+    labels: ["Tristan Scharfenstein-Montgomery","Johnathan Riley","Marivel Flores","Jesse Douglas","Hannah Svraka",
+             "Gareth Williams","Matthew Prince","Grant Hoh","Eric Glady","Dave Pothier","Moses Morgutia","Carlin Beard"],
+    data: [140.9,121.8,118.0,114.9,112.0,109.0,106.0,100.7,100.1,99.0,96.4,96.3]
   };
 
   window.addEventListener('load', function(){
@@ -281,6 +360,8 @@
     makeBarChart(document.getElementById('openChart').getContext('2d'), openLabels, openData, '#3B7DBF', openThresholdIdx, 'Ticket Age So Far', 'Number of Open Tickets');
     makeBarChart(document.getElementById('closedChart').getContext('2d'), closedLabels, closedData, '#3B7DBF', closedThresholdIdx, 'Time to Close', 'Number of Closed Tickets');
     makeBoxPlot(document.getElementById('subTeamBoxChart').getContext('2d'), subTeamBoxData, thresholdDays);
+    makeRankBarChart(document.getElementById('bestAgentChart').getContext('2d'), bestAgents.labels, bestAgents.data, '#3B7DBF', 'Median Ticket Age (days)');
+    makeRankBarChart(document.getElementById('worstAgentChart').getContext('2d'), worstAgents.labels, worstAgents.data, '#C9302C', 'Median Ticket Age (days)');
   });
 </script>
 </body>
