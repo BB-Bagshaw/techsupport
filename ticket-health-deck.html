@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tech Support Ticket Health</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/white.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#1a1a1a; --sub:#5a5a5a; --blue:#3B7DBF; --red:#C9302C; --amber:#F0AD4E;
+  }
+  .reveal { font-family: 'Segoe UI', Arial, sans-serif; color: var(--ink); }
+  .reveal h1 { font-size: 2.0em; font-weight: 800; text-align:left; margin-bottom:0.1em; }
+  .reveal h2 { font-size: 1.5em; font-weight: 800; text-align:left; margin-bottom:0.2em; }
+  .reveal h3 { font-size: 1.05em; font-weight: 700; color: var(--sub); text-align:left; margin-top:0; }
+  .reveal section { text-align:left; }
+  .reveal p, .reveal li { font-size: 0.62em; line-height:1.5; }
+  .statline { font-size:0.55em; color: var(--sub); font-weight:600; margin-bottom: 0.6em; }
+  .statline b { color: var(--ink); }
+  .chart-wrap { width: 100%; height: 420px; margin-top: 10px; }
+  .cover { display:flex; flex-direction:column; justify-content:center; height:100%; }
+  .cover .tag { font-size:0.5em; letter-spacing:0.15em; text-transform:uppercase; color: var(--sub); font-weight:700; }
+  .scope { font-size:0.5em; color:#888; margin-top:1.5em; border-top:1px solid #ddd; padding-top:0.6em; }
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+  .kpi-row { display:flex; gap:14px; margin: 14px 0 6px 0; }
+  .kpi { flex:1; background:#f4f6f8; border-radius:10px; padding:14px 16px; border-left:5px solid var(--blue); }
+  .kpi.red { border-left-color: var(--red); }
+  .kpi .val { font-size:1.3em; font-weight:800; color:var(--ink); }
+  .kpi .lbl { font-size:0.5em; color:var(--sub); font-weight:600; text-transform:uppercase; letter-spacing:0.03em; }
+  .callout { background:#fdecea; border-left:5px solid var(--red); padding:10px 16px; border-radius:6px; font-size:0.58em; margin-top:10px;}
+  .checklist li { margin-bottom:0.4em; }
+  .checklist li::marker { color: var(--blue); font-weight:bold; }
+  footer.slidefoot { position:absolute; bottom:8px; left:40px; font-size:0.35em; color:#aaa; }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<section>
+  <div class="cover">
+    <div class="tag">Operational Analytics &middot; Tech Support</div>
+    <h1>Ticket Health: Open Backlog &amp; Time-to-Close</h1>
+    <p style="font-size:0.55em; color:var(--sub); max-width:70%;">
+      A distribution-based review of how long Tech Support tickets stay open, and how long they take to close, measured against the stated 7-day auto-close policy.
+    </p>
+    <div class="scope">
+      Prepared by Matt Bagshaw &middot; Working draft for Director &amp; Data Engineering review &middot; Not yet presented to COO
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The Question We're Testing</h2>
+  <p>The COO has raised concern that the team may not be handling tickets correctly, specifically around closing them out or following up appropriately. We were told there is a policy: <b>tickets should auto-close at 7 days</b> if there's been no customer interaction (phone, email, or chat).</p>
+  <p>This analysis tests that claim directly using ticket-level duration data, distinguishing between tickets still open today and tickets that have already closed.</p>
+  <div class="callout">If the 7-day policy is functioning as described, we should see a sharp drop-off in ticket volume right around day 7, both in what's currently open and in how long tickets take to close.</div>
+</section>
+
+<section>
+  <h2>Scope &amp; Data Quality Checks</h2>
+  <p>Before trusting the numbers, we validated the population being measured:</p>
+  <ul class="checklist">
+    <li><b>IsClosed vs. Status</b> &mdash; confirmed 1:1 agreement between the boolean flag and the categorical status field; no sync issues found.</li>
+    <li><b>Case object scope</b> &mdash; discovered other internal teams use the Salesforce Case object purely for their own queue management, unrelated to customer support. These were excluded.</li>
+    <li><b>Window truncation</b> &mdash; early 30/90-day pulls artificially capped ticket age; extended to a 180-day window to capture the true tail.</li>
+  </ul>
+  <p style="margin-top:14px;">Net effect: population narrowed to <b>Tech Support&ndash;created cases only</b>, removing roughly 74% of raw open-case volume that belonged to unrelated teams.</p>
+</section>
+
+<section>
+  <h2>Open Tickets: Aging, Not Draining</h2>
+  <div class="statline">n = <b>11,985</b> open tickets &nbsp;|&nbsp; Median age <b>66 days</b> &nbsp;|&nbsp; P90 <b>150.9 days</b> &nbsp;|&nbsp; <b>84.1%</b> exceed the 7-day policy</div>
+  <div class="chart-wrap"><canvas id="openChart"></canvas></div>
+</section>
+
+<section>
+  <h2>What the Shape Tells Us</h2>
+  <p>If the auto-close policy were active, this histogram should show a cliff at day 7 and almost nothing surviving beyond it.</p>
+  <p>Instead, after an initial intake bump, volume settles into a <b>flat plateau of roughly 300&ndash;450 tickets per week</b>, sustained from around day 14 through day 150+.</p>
+  <div class="kpi-row">
+    <div class="kpi red"><div class="val">84.1%</div><div class="lbl">of open tickets already past 7 days</div></div>
+    <div class="kpi red"><div class="val">66 days</div><div class="lbl">median age of the open backlog</div></div>
+  </div>
+  <p style="margin-top:10px;">Tickets aren't decaying out of the queue as they age &mdash; they're accumulating and stalling indefinitely once they miss the early window.</p>
+</section>
+
+<section>
+  <h2>Closed Tickets: Time-to-Close</h2>
+  <div class="statline">n = <b>103,487</b> closed tickets &nbsp;|&nbsp; Median <b>8.9 days</b> &nbsp;|&nbsp; P90 <b>28.5 days</b> &nbsp;|&nbsp; <b>55.1%</b> took longer than 7 days</div>
+  <div class="chart-wrap"><canvas id="closedChart"></canvas></div>
+</section>
+
+<section>
+  <h2>Two Populations Hiding in One Metric</h2>
+  <div class="grid2">
+    <div>
+      <h3>Fast resolvers</h3>
+      <div class="kpi"><div class="val">36.1%</div><div class="lbl">closed within 48 hours (37,362 tickets)</div></div>
+      <p style="margin-top:8px;">Loosely tracks anecdotal first-touch resolution rates. Needs validation against the actual first-touch custom field.</p>
+    </div>
+    <div>
+      <h3>Stalled resolvers</h3>
+      <div class="kpi red"><div class="val">55.1%</div><div class="lbl">took longer than 7 days to close</div></div>
+      <p style="margin-top:8px;">A secondary peak around day 11&ndash;13 suggests a specific process step, possibly an escalation or review cycle, pulling stragglers to close later rather than on schedule.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Putting It Together</h2>
+  <p>The 7-day rule does not appear to function as an automated, enforced cutoff:</p>
+  <ul class="checklist">
+    <li>A meaningful share of tickets (roughly a third) do resolve quickly, consistent with genuine first-contact resolution.</li>
+    <li>Once a ticket survives the first couple of days without resolving, there is no consistent mechanism pulling it toward closure.</li>
+    <li>The open-ticket plateau is effectively the accumulation of tickets that missed that early window and then had nothing forcing them forward.</li>
+  </ul>
+  <div class="callout">This points toward a missing or non-functioning closure mechanism, rather than a simple team performance or compliance issue.</div>
+</section>
+
+<section>
+  <h2>Next Steps</h2>
+  <ul class="checklist">
+    <li>Segment both distributions by <b>team, agent, and status</b> to see whether stalling is concentrated or systemic.</li>
+    <li>Validate the 48-hour fast-close proxy against the true <b>first-touch resolution</b> custom field.</li>
+    <li>Investigate the secondary peak around day 11&ndash;13 in the closed-ticket data, likely tied to a specific workflow step.</li>
+    <li>Confirm with process owners whether a 7-day auto-close mechanism exists in the system today, or whether it's a stated policy with no technical enforcement.</li>
+  </ul>
+  <div class="scope">This is a working analysis for internal review. Not yet positioned for COO-level presentation.</div>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({ hash:true, width:1100, height:700, margin:0.06, controls:true, progress:true });
+
+  const openLabels = ["0-14d","14-28d","28-42d","42-56d","56-70d","70-84d","84-98d","98-112d","112-126d","126-140d","140-154d","154-168d","168-182d"];
+  const openData   = [1330,430,395,360,355,310,315,330,365,420,395,335,295];
+
+  const closedLabels = ["0-5d","5-10d","10-15d","15-20d","20-25d","25-30d","30-35d","35-40d","40-45d","45-50d","50-55d","55-60d"];
+  const closedData   = [1300,2600,3800,1450,900,750,400,150,90,100,80,90];
+
+  function makeBarChart(ctx, labels, data, color, thresholdIndex, xLabel, yLabel){
+    return new Chart(ctx, {
+      type: 'bar',
+      data: { labels: labels, datasets: [{ data: data, backgroundColor: labels.map((_,i)=> i===thresholdIndex ? '#C9302C' : color), borderRadius: 2 }] },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:false },
+          tooltip:{ callbacks:{ label:(c)=> c.parsed.y.toLocaleString()+' tickets' } } },
+        scales:{
+          x:{ title:{ display:true, text:xLabel, font:{size:13,weight:'bold'} }, ticks:{font:{size:11}} },
+          y:{ title:{ display:true, text:yLabel, font:{size:13,weight:'bold'} }, ticks:{ callback:(v)=>v.toLocaleString(), font:{size:11} } }
+        }
+      }
+    });
+  }
+
+  window.addEventListener('load', function(){
+    makeBarChart(document.getElementById('openChart').getContext('2d'), openLabels, openData, '#3B7DBF', 1, 'Ticket Age So Far', 'Number of Open Tickets');
+    makeBarChart(document.getElementById('closedChart').getContext('2d'), closedLabels, closedData, '#3B7DBF', 1, 'Time to Close', 'Number of Closed Tickets');
+  });
+</script>
+</body>
+</html>
