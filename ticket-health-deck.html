@@ -135,10 +135,9 @@
 </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.js">
-</script>
-  <script>
-    Reveal.initialize({ hash:true, width:1100, height:700, margin:0.06, controls:true, progress:true });
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({ hash:true, width:1100, height:700, margin:0.06, controls:true, progress:true });
 
   // Bin counts read directly off the validated Power BI R visuals (approximate bar-height reads).
   const openBinEdges  = [0,14,28,42,56,70,84,98,112,126,140,154,168,182];
@@ -167,4 +166,19 @@
         plugins:{ legend:{ display:false },
           tooltip:{ callbacks:{ label:(c)=> c.parsed.y.toLocaleString()+' tickets' } } },
         scales:{
-          x:{ title:{ display:true, text:xLabel, font:{size:13,weight:'bold'} }, ticks:{font:{size:11}} 
+          x:{ title:{ display:true, text:xLabel, font:{size:13,weight:'bold'} }, ticks:{font:{size:11}} },
+          y:{ title:{ display:true, text:yLabel, font:{size:13,weight:'bold'} }, ticks:{ callback:(v)=>v.toLocaleString(), font:{size:11} } }
+        }
+      }
+    });
+  }
+
+  window.addEventListener('load', function(){
+    const openThresholdIdx = findThresholdIndex(openBinEdges, thresholdDays);
+    const closedThresholdIdx = findThresholdIndex(closedBinEdges, thresholdDays);
+    makeBarChart(document.getElementById('openChart').getContext('2d'), openLabels, openData, '#3B7DBF', openThresholdIdx, 'Ticket Age So Far', 'Number of Open Tickets');
+    makeBarChart(document.getElementById('closedChart').getContext('2d'), closedLabels, closedData, '#3B7DBF', closedThresholdIdx, 'Time to Close', 'Number of Closed Tickets');
+  });
+</script>
+</body>
+</html>
