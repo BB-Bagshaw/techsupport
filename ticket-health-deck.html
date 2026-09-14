@@ -168,6 +168,43 @@
 </section>
 
 <section>
+  <h2>New Layer: Does Duration Affect Satisfaction?</h2>
+  <p>Beyond speed, we tested whether ticket age correlates with customer satisfaction (CSAT), using survey responses tied to Case ID on closed tickets.</p>
+  <div class="callout"><b>Data note (system latency):</b> CSAT-to-case match rate is 91.5% (2,371 of 2,590 survey responses). The ~8% gap is attributable to system latency between independently-refreshing case and survey extracts &mdash; both use a rolling 180-day window, but on different refresh schedules, so records near the boundary can fall inside one snapshot and outside the other at the moment of extraction. This is an expected characteristic of the current extraction method, not a linkage failure, and is unlikely to fully resolve without a shared, synchronized refresh cadence.</div>
+</section>
+
+<section>
+  <h2>CSAT Declines Sharply the Longer a Ticket Stays Open</h2>
+  <div class="statline">
+    <b>2,371</b> closed, matched cases &nbsp;&nbsp; Org-wide CSAT (top-2-box) <b>76.2%</b> &nbsp;&nbsp; CSAT measured as score of 4-5 on a 1-5 scale
+  </div>
+  <div class="chart-wrap"><canvas id="csatDecayChart"></canvas></div>
+  <div class="note">Top-2-box CSAT (% scoring 4 or 5) on "overall support received," bucketed by time-to-close. Closed tickets only.</div>
+</section>
+
+<section>
+  <h2>Satisfaction Holds Steady, Then Collapses Past ~7 Days</h2>
+  <ul class="checklist">
+    <li>CSAT is stable and healthy through day 5 (<b>81.8%&ndash;82.7%</b>), then declines meaningfully starting at the <b>7-day policy threshold</b> (74.2%).</li>
+    <li>By 14&ndash;30 days, CSAT has nearly <b>halved</b> from its early-window level (52.8%), and continues falling to <b>41.2%</b> for tickets open 60+ days.</li>
+    <li>This is a threshold effect, not a gradual decline: the data supports the idea that the 7-day target isn't arbitrary &mdash; it appears to mark a real inflection point in customer patience.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Applying This to the Open Backlog</h2>
+  <div class="statline">
+    Closed-case CSAT-by-duration rates applied to <b>11,982</b> open tickets, grouped by current age
+  </div>
+  <div class="kpi-row">
+    <div class="kpi red"><div class="val">47.7%</div><div class="lbl">of the open backlog is projected to be dissatisfied if closed today</div></div>
+    <div class="kpi red"><div class="val">~2,860</div><div class="lbl">tickets of excess dissatisfaction risk vs. the org-wide average</div></div>
+  </div>
+  <p style="margin-top:10px;">Roughly <b>52.6%</b> of the entire open backlog (6,297 tickets) has already crossed 60 days &mdash; precisely the bucket with the lowest measured CSAT (41.2%). The backlog isn't just old; it's old in exactly the range where satisfaction has already collapsed.</p>
+  <div class="callout">This is a <b>modeled estimate</b>, not a measured fact. It assumes closed-case decay patterns transfer to currently open tickets, a reasonable but unproven assumption. Tickets stuck in the backlog for atypical reasons (true complexity, escalations) may behave differently than a typical case that happened to close slowly.</div>
+</section>
+
+<section>
   <h2>Next Steps</h2>
   <ul class="checklist">
     <li>Segment both distributions by <b>team, agent, and status</b> to see whether stalling is concentrated or systemic. <i>(Sub-team and agent extremes now complete; see prior slides.)</i></li>
@@ -298,6 +335,43 @@
     });
   }
 
+  function makeCsatChart(ctx, labels, data, nData){
+    return new Chart(ctx, {
+      type: 'bar',
+      data: { labels: labels, datasets: [{ data: data, backgroundColor: '#3B7DBF', borderRadius: 3 }] },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:false },
+          tooltip:{ callbacks:{ label:(c)=> c.parsed.y+'% satisfied (n='+nData[c.dataIndex]+')' } } },
+        scales:{
+          y:{ min:0, max:100, title:{ display:true, text:'% Satisfied (score 4-5)', font:{size:13,weight:'bold'} }, ticks:{ callback:(v)=>v+'%', font:{size:11} } },
+          x:{ ticks:{ font:{size:12} } }
+        }
+      },
+      plugins: [{
+        id: 'orgAvgLine',
+        afterDraw: (chart) => {
+          const yScale = chart.scales.y;
+          const yPixel = yScale.getPixelForValue(76.2);
+          const ctx2 = chart.ctx;
+          ctx2.save();
+          ctx2.strokeStyle = '#5a5a5a';
+          ctx2.lineWidth = 1.5;
+          ctx2.setLineDash([4,3]);
+          ctx2.beginPath();
+          ctx2.moveTo(chart.chartArea.left, yPixel);
+          ctx2.lineTo(chart.chartArea.right, yPixel);
+          ctx2.stroke();
+          ctx2.setLineDash([]);
+          ctx2.fillStyle = '#5a5a5a';
+          ctx2.font = 'italic 11px Segoe UI';
+          ctx2.fillText('Org avg: 76.2%', chart.chartArea.left + 5, yPixel - 6);
+          ctx2.restore();
+        }
+      }]
+    });
+  }
+
   const subTeamBoxData = {
     labels: ["Tier 2 US Bravo","Tier 3 APAC","Tier 3 US","Tier 2 US Alpha","BEAST US","Tier 1 CS",
              "Tier 1 EMEA","Tier 1 APAC","Tier 2 APAC","Tier 1 US","Tier 2 Nordic","Tier 3 EMEA",
@@ -329,7 +403,6 @@
     }]
   };
 
-  // Computed directly from case-level export: agents with 20+ open tickets, sorted by median age.
   const bestAgents = {
     labels: ["Ella Eckert","Hunter Buehl","Steven Vu","Zachary Cash","Dev Waghela","Danial Mir",
              "Lawren Richardson","Steven Song","Vera Krapivner","Jennifer Erhart","Anthony Basmadjian","Jesus Bernal"],
@@ -342,6 +415,10 @@
     data: [140.9,121.8,118.0,114.9,112.0,109.0,106.0,100.7,100.1,99.0,96.4,96.3]
   };
 
+  const csatBuckets = ["0-2d","2-5d","5-7d","7-14d","14-30d","30-60d","60d+"];
+  const csatPct = [81.8,82.7,74.2,64.1,52.8,51.9,41.2];
+  const csatN = [1529,202,97,281,193,52,17];
+
   window.addEventListener('load', function(){
     const openThresholdIdx = findThresholdIndex(openBinEdges, thresholdDays);
     const closedThresholdIdx = findThresholdIndex(closedBinEdges, thresholdDays);
@@ -350,6 +427,7 @@
     makeBoxPlot(document.getElementById('subTeamBoxChart').getContext('2d'), subTeamBoxData, thresholdDays);
     makeRankBarChart(document.getElementById('bestAgentChart').getContext('2d'), bestAgents.labels, bestAgents.data, '#3B7DBF', 'Median Ticket Age (days)');
     makeRankBarChart(document.getElementById('worstAgentChart').getContext('2d'), worstAgents.labels, worstAgents.data, '#C9302C', 'Median Ticket Age (days)');
+    makeCsatChart(document.getElementById('csatDecayChart').getContext('2d'), csatBuckets, csatPct, csatN);
   });
 </script>
 </body>
