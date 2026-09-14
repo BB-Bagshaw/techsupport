@@ -44,13 +44,13 @@
     <div class="tag">Operational Analytics &middot; Tech Support</div>
     <h1>Ticket Health: Open Backlog &amp; Time-to-Close</h1>
     <p style="font-size:0.55em; color:var(--sub); max-width:70%;">A distribution-based review of how long Tech Support tickets stay open, and how long they take to close, measured against the stated 7-day auto-close policy.</p>
-    <div class="scope">Prepared by Matt Bagshaw &middot; Working draft for Director &amp; Data Engineering review &middot; Not yet presented to COO</div>
+    <div class="scope">Prepared by Matt Bagshaw &middot; Working draft for Brad &amp; Teri review &middot; Not yet presented to COO</div>
   </div>
 </section>
 
 <section>
   <h2>The Question We're Testing</h2>
-  <p>The COO has raised concern that the team may not be handling tickets correctly, specifically around closing them out or following up appropriately. We were told there is a policy: <b>tickets should auto-close at 7 days</b> if there's been no customer interaction (phone, email, or chat).</p>
+  <p>Concerns raised that the team may not be handling tickets correctly, specifically around closing them out or following up appropriately. We were told there is a policy: <b>tickets should auto-close at 7 days</b> if there's been no customer interaction (phone, email, or chat).</p>
   <p>This analysis tests that claim directly using ticket-level duration data, distinguishing between tickets still open today and tickets that have already closed.</p>
   <div class="callout">If the 7-day policy is functioning as described, we should see a sharp drop-off in ticket volume right around day 7, both in what's currently open and in how long tickets take to close.</div>
 </section>
@@ -170,11 +170,11 @@
 <section>
   <h2>New Layer: Does Duration Affect Satisfaction?</h2>
   <p>Beyond speed, we tested whether ticket age correlates with customer satisfaction (CSAT), using survey responses tied to Case ID on closed tickets.</p>
-  <div class="callout"><b>Data note (system latency):</b> CSAT-to-case match rate is 91.5% (2,371 of 2,590 survey responses). The ~8% gap is attributable to system latency between independently-refreshing case and survey extracts &mdash; both use a rolling 180-day window, but on different refresh schedules, so records near the boundary can fall inside one snapshot and outside the other at the moment of extraction. This is an expected characteristic of the current extraction method, not a linkage failure, and is unlikely to fully resolve without a shared, synchronized refresh cadence.</div>
+  <div class="callout"><b>Data note (system latency):</b> CSAT-to-case match rate is 91.5% (2,371 of 2,590 survey responses). The ~8% gap is attributable to system latency between independently-refreshing case and survey extracts &mdash; both use a rolling 180-day window, but on different refresh schedules, so records near the boundary can fall inside one snapshot and outside the other at the moment of extraction. This is an expected characteristic of the current extraction method, not a linkage failure.  Final analysis will set a a distinct date range to align cases with survey results.</div>
 </section>
 
 <section>
-  <h2>CSAT Declines Sharply the Longer a Ticket Stays Open</h2>
+  <h2>CSAT Declines Sharply the Longer a Ticket Takes to Close</h2>
   <div class="statline">
     <b>2,371</b> closed, matched cases &nbsp;&nbsp; Org-wide CSAT (top-2-box) <b>76.2%</b> &nbsp;&nbsp; CSAT measured as score of 4-5 on a 1-5 scale
   </div>
