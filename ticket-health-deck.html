@@ -19,6 +19,7 @@
   .statline { font-size:0.55em; color:var(--sub); font-weight:600; margin-bottom:0.6em; }
   .statline b { color:var(--ink); }
   .chart-wrap { width:100%; height:420px; margin-top:10px; }
+  .chart-wrap.short { height:360px; }
   .cover { display:flex; flex-direction:column; justify-content:center; height:100%; }
   .cover .tag { font-size:0.5em; letter-spacing:0.15em; text-transform:uppercase; color:var(--sub); font-weight:700; }
   .scope { font-size:0.5em; color:#888; margin-top:1.5em; border-top:1px solid #ddd; padding-top:0.6em; }
@@ -26,6 +27,7 @@
   .kpi-row { display:flex; gap:14px; margin:14px 0 6px 0; }
   .kpi { flex:1; background:#f4f6f8; border-radius:10px; padding:14px 16px; border-left:5px solid var(--blue); }
   .kpi.red { border-left-color:var(--red); }
+  .kpi.amber { border-left-color:var(--amber); }
   .kpi .val { font-size:1.3em; font-weight:800; color:var(--ink); }
   .kpi .lbl { font-size:0.5em; color:var(--sub); font-weight:600; text-transform:uppercase; letter-spacing:0.03em; }
   .callout { background:#fdecea; border-left:5px solid var(--red); padding:10px 16px; border-radius:6px; font-size:0.58em; margin-top:10px; }
@@ -53,8 +55,8 @@
   <p>Concerns raised that the team may not be handling tickets correctly, specifically around closing them out or following up appropriately. We were told there is a policy: <b>tickets should auto-close at 7 days</b> if there's been no customer interaction (phone, email, or chat).</p>
   <p>This analysis tests that claim directly using ticket-level duration data, distinguishing between tickets still open today and tickets that have already closed.</p>
   <div class="callout">If the 7-day policy is functioning as described, we should see a sharp drop-off in ticket volume right around day 7, both in what's currently open and in how long tickets take to close.
-  
-  Sample Size:  180 days | 115K Cases</div>
+  <br><br>
+  Sample Size:  180 days (cases created Apr 2 &ndash; Sep 29, 2026) | 111K Cases</div>
 </section>
 
 <section>
@@ -64,13 +66,14 @@
     <li><b>IsClosed vs. Status</b> &mdash; confirmed 100% agreement between the boolean flag and the categorical status field; no sync issues found.</li>
     <li><b>Case object scope</b> &mdash; discovered other internal teams use the Salesforce Case object purely for their own queue management, unrelated to customer support. These were excluded.</li>
     <li><b>Window truncation</b> &mdash; early 30/90-day pulls artificially capped ticket age; extended to a 180-day window to capture the true tail.</li>
+    <li><b>Full raw extract</b> &mdash; 110,926 valid cases (10,155 open / 100,771 closed); 0 duplicate Case IDs; 16 malformed export rows removed. Case duration reconciles exactly to Closed &minus; Created.</li>
   </ul>
   </section>
 
 <section>
   <h2>Open Tickets: Aging, Not Draining</h2>
   <div class="statline">
-    <b>11,987</b> open tickets &nbsp;&nbsp; Median age <b>66.1 days</b> &nbsp;&nbsp; P90 <b>150.9 days</b> &nbsp;&nbsp; <b>84.6%</b> exceed the 7-day policy &nbsp;&nbsp; 785 (6.5%) opened &lt;2 days ago, excluded
+    <b>10,155</b> open tickets &nbsp;&nbsp; Median age <b>67.1 days</b> &nbsp;&nbsp; P90 <b>152.9 days</b> &nbsp;&nbsp; <b>84.1%</b> exceed the 7-day policy &nbsp;&nbsp; 436 (4.3%) opened &lt;2 days ago
   </div>
   <div class="chart-wrap"><canvas id="openChart"></canvas></div>
 </section>
@@ -78,10 +81,10 @@
 <section>
   <h2>What the Shape Tells Us</h2>
   <p>If the auto-close policy were active, this histogram should show a cliff at day 7 and almost nothing surviving beyond it.</p>
-  <p>Instead, after an initial intake bump, volume settles into a <b>flat plateau of roughly 300&ndash;450 tickets per week</b>, sustained from around day 14 through day 180.</p>
+  <p>Instead, after an initial intake bump, volume settles into a <b>flat plateau of roughly 500&ndash;730 tickets per two-week interval</b>, sustained from around day 14 through day 180.</p>
   <div class="kpi-row">
-    <div class="kpi red"><div class="val">84.6%</div><div class="lbl">of open tickets already past 7 days</div></div>
-    <div class="kpi red"><div class="val">66.1 days</div><div class="lbl">median age of the open backlog</div></div>
+    <div class="kpi red"><div class="val">84.1%</div><div class="lbl">of open tickets already past 7 days</div></div>
+    <div class="kpi red"><div class="val">67.1 days</div><div class="lbl">median age of the open backlog</div></div>
   </div>
   <p style="margin-top:10px;">Tickets aren't decaying out of the queue as they age &mdash; they're accumulating and stalling indefinitely once they miss the early window.</p>
 </section>
@@ -89,9 +92,10 @@
 <section>
   <h2>Closed Tickets: Time-to-Close</h2>
   <div class="statline">
-    <b>103,493</b> closed tickets &nbsp;&nbsp; Median <b>8.9 days</b> &nbsp;&nbsp; P90 <b>28.5 days</b> &nbsp;&nbsp; <b>55.1%</b> took longer than 7 days
+    <b>100,771</b> closed tickets &nbsp;&nbsp; Median <b>8.2 days</b> &nbsp;&nbsp; P90 <b>27.7 days</b> &nbsp;&nbsp; <b>54.0%</b> took longer than 7 days &nbsp;&nbsp; <b>7.3%</b> took longer than 30 days
   </div>
   <div class="chart-wrap"><canvas id="closedChart"></canvas></div>
+  <div class="note">Chart shows 0&ndash;60 days; 1,688 tickets (1.7%) took longer than 60 days to close and are not shown.</div>
 </section>
 
 <section>
@@ -99,43 +103,98 @@
   <div class="grid2">
     <div>
       <h3>Fast resolvers</h3>
-      <div class="kpi"><div class="val">36.1%</div><div class="lbl">closed within 48 hours (37,366 tickets)</div></div>
+      <div class="kpi"><div class="val">36.7%</div><div class="lbl">closed within 48 hours (36,962 tickets)</div></div>
       <p style="margin-top:8px;">Loosely tracks anecdotal first-touch resolution rates. Needs validation against the actual first-touch custom field.</p>
     </div>
     <div>
       <h3>Stalled resolvers</h3>
-      <div class="kpi red"><div class="val">55.1%</div><div class="lbl">took longer than 7 days to close</div></div>
-      <p style="margin-top:8px;">A secondary peak around day 11&ndash;13 suggests a specific process step, possibly an escalation or review cycle, pulling stragglers to close later rather than on schedule.</p>
+      <div class="kpi red"><div class="val">54.0%</div><div class="lbl">took longer than 7 days to close</div></div>
+      <p style="margin-top:8px;">Closures spike at days 6&ndash;7 and again at days 11&ndash;12. These peaks line up with a timed close process on the Waiting for Customer path (see next slides), not with agents working tickets to resolution.</p>
     </div>
   </div>
 </section>
 
 <section>
   <h2>Putting It Together</h2>
-  <p>The 7-day rule does not appear to function as an automated, enforced cutoff:</p>
+  <p>The 7-day rule is not missing &mdash; it is <b>partially automated and inconsistently applied</b>:</p>
   <ul class="checklist">
     <li>A meaningful share of tickets (roughly a third) do resolve quickly, consistent with genuine first-contact resolution.</li>
-    <li>Once a ticket survives the first couple of days without resolving, there is no consistent mechanism pulling it toward closure.</li>
-    <li>The open-ticket plateau is effectively the accumulation of tickets that missed that early window and then had nothing forcing them forward.</li>
+    <li>A timed close process exists, but only on the <b>Waiting for Customer</b> path, and it misses a large share of eligible tickets.</li>
+    <li>Tickets in <b>Pending Closure</b> or <b>Assigned</b> have no working mechanism pulling them toward closure, and that's where the open-ticket plateau accumulates.</li>
   </ul>
-  <div class="callout">This points toward a missing or non-functioning closure mechanism, rather than a simple team performance or compliance issue.</div>
+  <div class="callout">This points toward a partially broken closure mechanism, rather than a simple team performance or compliance issue.</div>
+</section>
+
+<section>
+  <h2>An Auto-Close Exists &mdash; On One Path Only</h2>
+  <div class="kpi-row">
+    <div class="kpi"><div class="val">41%</div><div class="lbl">of all closures (41,369) last modified by a single system account</div></div>
+    <div class="kpi"><div class="val">99.8%</div><div class="lbl">of those closures came from the Waiting for Customer path</div></div>
+    <div class="kpi"><div class="val">74%</div><div class="lbl">had a warning email sent first (vs. 10% of manual closures)</div></div>
+  </div>
+  <ul class="checklist" style="margin-top:14px;">
+    <li>System closures cluster <b>5&ndash;7 and 9&ndash;14 calendar days</b> after a case moves to Waiting for Customer (&asymp;5 and &asymp;7&ndash;10 business days). In those windows, 83&ndash;94% of closures are by the system account.</li>
+    <li>The <b>IsReadyForAutoClose5Days</b> flag is 0 on all 110,926 records &mdash; unused or evaluated elsewhere.</li>
+  </ul>
+  <div class="callout">To confirm with a Salesforce admin: the system account's identity, the close criteria, and Case Field History showing who set each case to Closed.</div>
+</section>
+
+<section>
+  <h2>Where the Automation Falls Short</h2>
+  <div class="kpi-row">
+    <div class="kpi red"><div class="val">2,955</div><div class="lbl">in Waiting for Customer, past their 7-business-day deadline; only 13% got the warning email</div></div>
+    <div class="kpi red"><div class="val">2,589</div><div class="lbl">in Pending Closure, past their 2-business-day deadline; median 103 days in that status</div></div>
+    <div class="kpi amber"><div class="val">1,524</div><div class="lbl">Assigned to an agent; median age 78 days; no automation covers this status</div></div>
+  </div>
+  <ul class="checklist" style="margin-top:14px;">
+    <li>Only <b>999</b> closed cases ever passed through Pending Closure &mdash; fewer than the 2,718 sitting there today. That status has effectively become a dead end.</li>
+    <li>800 Pending Closure cases are already flagged <b>IsReadyForPendingClose2Days = 1</b> and remain open.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>What the Open Backlog Actually Is</h2>
+  <div class="statline">
+    <b>10,155</b> open tickets &nbsp;&nbsp; <b>55%</b> waiting on a customer and past a system-defined close deadline &nbsp;&nbsp; only <b>19%</b> waiting on an agent
+  </div>
+  <div class="chart-wrap short"><canvas id="backlogCompChart"></canvas></div>
+  <div class="note">Past deadline = Waiting for Customer past 7 business days, or Pending Closure past 2 business days. Agent-owned = Assigned, Waiting for You, ReOpened, Needs Callback, New, Working. Internal = Waiting for Bluebeam/Partner, Research, Escalated, Jira Update.</div>
+</section>
+
+<section>
+  <h2>Most of the Backlog Isn't Agent Work</h2>
+  <ul class="checklist">
+    <li><b>5,544 tickets (55%)</b> are waiting on a customer and already past the system's own close deadline, with a median age of 99 days. Fixing the automation could clear them without any agent time.</li>
+    <li><b>3,175</b> of the 4,161 tickets over 90 days old are in this past-deadline group.</li>
+    <li><b>1,952 tickets (19%)</b> are agent-owned. Tier 1 CS holds 1,719 of them, and three owners hold 1,588 &mdash; volumes that suggest queue-holding accounts rather than individual workloads. To validate.</li>
+    <li><b>2,502 tickets (25%)</b> are waiting on a customer and still within their deadline &mdash; the process working as designed.</li>
+  </ul>
+  <div class="callout">The capacity question (next phase) should be tested against the <b>~2,000 agent-owned tickets</b>, not the full 10,155. Using the total would overstate the agent workload by roughly five times.</div>
+</section>
+
+<section>
+  <h2>Past-Deadline Tickets by Team</h2>
+  <div class="statline">
+    Open tickets by sub-team and status group &nbsp;&nbsp; Past-deadline share ranges from <b>0% (Tier 2 DACH)</b> to <b>78% (BEAST US)</b>
+  </div>
+  <div class="chart-wrap short"><canvas id="subTeamCompChart"></canvas></div>
 </section>
 
 <section>
   <h2>Segmentation: Where the Stalling Concentrates</h2>
   <div class="statline">
-    <b>15</b> sub-teams reviewed &nbsp;&nbsp; Overall open-ticket median <b>66.1 days</b> &nbsp;&nbsp; <b>100%</b> of teams exceed the 7-day target
+    <b>15</b> sub-teams reviewed &nbsp;&nbsp; Overall open-ticket median <b>67.1 days</b> &nbsp;&nbsp; <b>13 of 15</b> teams exceed the 7-day target
   </div>
   <div class="chart-wrap"><canvas id="subTeamBoxChart"></canvas></div>
-  <div class="note">Computed directly from case-level export (n=11,982 open tickets). Log scale, red dashed line = 7-day target.</div>
+  <div class="note">Computed directly from case-level export (n=10,155 open tickets). Log scale, red dashed line = 7-day target.</div>
 </section>
 
 <section>
-  <h2>No Team Meets the Target &mdash; But the Gap Isn't Uniform</h2>
+  <h2>Most Teams Miss the Target &mdash; But the Gap Isn't Uniform</h2>
   <ul class="checklist">
-    <li>Every sub-team's median open-ticket age sits above the 7-day target, confirming this is a <b>systemic gap</b>, not one team's performance issue.</li>
-    <li><b>Tier 2 US Bravo (99.9d), Tier 3 APAC (96.3d), and Tier 3 US (94.9d)</b> carry the oldest and most inconsistent backlogs.</li>
-    <li><b>Tier 2 DACH</b> is the exception: median age of <b>2.7 days</b>, tightest distribution of any team, proof the target is achievable under current tooling.</li>
+    <li>13 of 15 sub-teams have a median open-ticket age above the 7-day target, confirming this is a <b>systemic gap</b>, not one team's performance issue.</li>
+    <li><b>Tier 3 APAC (124.6d), Tier 2 US Bravo (107.5d), and Tier 3 US (105.9d)</b> carry the oldest backlogs.</li>
+    <li><b>Tier 2 DACH</b> is the exception: median age of <b>5.8 days</b> and none of its open tickets past a close deadline &mdash; proof the target is achievable under current tooling. Tier 2 Nordic (7.3d) and Tier 2 UK (7.6d) sit right at the line.</li>
   </ul>
   <div class="callout">Tall, inconsistent boxes (e.g. Tier 2 US Alpha, Tier 2 APAC) paired with very young outlier tickets suggest a <b>bimodal pattern</b>: new intake is handled reasonably, but a portion of the backlog stalls indefinitely and is never cleared.</div>
 </section>
@@ -143,7 +202,7 @@
 <section>
   <h2>Best Backlog Health</h2>
   <div class="statline">
-    Fastest 12 of 71 qualifying agents by median open-ticket age &nbsp;&nbsp; Org median <b>66.1 days</b> &nbsp;&nbsp; 7-day target shown in red
+    Fastest 12 of 70 qualifying agents (20+ open tickets) by median open-ticket age &nbsp;&nbsp; Org median <b>67.1 days</b> &nbsp;&nbsp; 7-day target shown in red
   </div>
   <div class="chart-wrap"><canvas id="bestAgentChart"></canvas></div>
   <div class="note">Proof point: the 7-day target is achievable today, under current tooling and staffing, by a meaningful group of agents.</div>
@@ -152,10 +211,10 @@
 <section>
   <h2>Worst Backlog Health</h2>
   <div class="statline">
-    Slowest 12 of 71 qualifying agents by median open-ticket age &nbsp;&nbsp; Combined open backlog held by this group: <b>2,640</b> tickets
+    Slowest 12 of 70 qualifying agents by median open-ticket age &nbsp;&nbsp; Combined open backlog held by this group: <b>1,964</b> tickets
   </div>
   <div class="chart-wrap"><canvas id="worstAgentChart"></canvas></div>
-  <div class="callout">These 12 agents represent <b>16.9%</b> of qualifying headcount but hold <b>22.3%</b> of the total open backlog among agents with 20+ tickets.</div>
+  <div class="callout">These 12 agents represent <b>17.1%</b> of qualifying headcount but hold <b>19.6%</b> of the total open backlog among agents with 20+ tickets.</div>
 </section>
 
 <section>
@@ -195,26 +254,27 @@
 <section>
   <h2>Applying This to the Open Backlog</h2>
   <div class="statline">
-    Closed-case CSAT-by-duration rates applied to <b>11,982</b> open tickets, grouped by current age
+    Closed-case CSAT-by-duration rates applied to <b>10,155</b> open tickets, grouped by current age
   </div>
   <div class="kpi-row">
-    <div class="kpi red"><div class="val">47.7%</div><div class="lbl">of the open backlog is projected to be dissatisfied if closed today</div></div>
-    <div class="kpi red"><div class="val">~2,860</div><div class="lbl">tickets of excess dissatisfaction risk vs. the org-wide average</div></div>
+    <div class="kpi red"><div class="val">48.0%</div><div class="lbl">of the open backlog (~4,875 tickets) is projected to be dissatisfied if closed today</div></div>
+    <div class="kpi red"><div class="val">~2,460</div><div class="lbl">tickets of excess dissatisfaction risk vs. the org-wide average</div></div>
   </div>
-  <p style="margin-top:10px;">Roughly <b>52.6%</b> of the entire open backlog (6,297 tickets) has already crossed 60 days &mdash; precisely the bucket with the lowest measured CSAT (41.2%). The backlog isn't just old; it's old in exactly the range where satisfaction has already collapsed.</p>
-  <div class="callout">This is a <b>modeled estimate</b>, not a measured fact. It assumes closed-case decay patterns transfer to currently open tickets, a reasonable but unproven assumption. Tickets stuck in the backlog for atypical reasons (true complexity, escalations) may behave differently than a typical case that happened to close slowly.</div>
+  <p style="margin-top:10px;">Roughly <b>52.6%</b> of the entire open backlog (5,345 tickets) has already crossed 60 days &mdash; precisely the bucket with the lowest measured CSAT (41.2%). The backlog isn't just old; it's old in exactly the range where satisfaction has already collapsed.</p>
+  <div class="callout">This is a <b>modeled estimate</b>, not a measured fact. It assumes closed-case decay patterns transfer to currently open tickets, a reasonable but unproven assumption. CSAT rates are from the prior survey match and will be refreshed once survey data is aligned to the new date range.</div>
 </section>
 
 <section>
   <h2>Next Steps</h2>
   <ul class="checklist">
-    <li>Segment both distributions by <b>team, agent, and status</b> to see whether stalling is concentrated or systemic. <i>(Sub-team and agent extremes now complete; see prior slides.)</i></li>
+    <li>Confirm with the Salesforce admin the <b>system account and close logic</b> on the Waiting for Customer path, and why 2,955 eligible tickets were missed.</li>
+    <li>Repair or define an exit for <b>Pending Closure</b>: 2,589 tickets are past their 2-business-day deadline.</li>
+    <li>Validate the <b>Tier 1 CS Assigned</b> concentration (1,588 tickets across three owners) as queue accounts or individual workloads.</li>
     <li>Validate the 48-hour fast-close proxy against the true <b>first-touch resolution</b> custom field.</li>
-    <li>Investigate the secondary peak around day 11&ndash;13 in the closed-ticket data, likely tied to a specific workflow step.</li>
-    <li>Confirm with process owners whether a 7-day auto-close mechanism exists in the system today, or whether it's a stated policy with no technical enforcement.</li>
     <li>Pull Tier 2 DACH's workflow/staffing model as a benchmark case study for teams carrying the largest backlogs.</li>
+    <li>Test agent capacity (Calabrio / WebEx) against the <b>~2,000 agent-owned tickets</b>, not the full backlog.</li>
   </ul>
-  <div class="scope">This is a working analysis for internal review. Not yet positioned for COO-level presentation.</div>
+  <div class="scope">Working analysis based on Salesforce case data. Workforce and call-center data pending access.</div>
 </section>
 
 </div>
@@ -226,11 +286,11 @@
 
   const openBinEdges   = [0,14,28,42,56,70,84,98,112,126,140,154,168,182];
   const openLabels     = ["0-14d","14-28d","28-42d","42-56d","56-70d","70-84d","84-98d","98-112d","112-126d","126-140d","140-154d","154-168d","168-182d"];
-  const openData       = [1075,1385,440,395,350,315,310,320,350,370,415,440,470];
+  const openData       = [2745,703,652,622,504,559,615,692,718,690,727,533,395];
 
   const closedBinEdges  = [0,5,10,15,20,25,30,35,40,45,50,55,60];
   const closedLabels    = ["0-5d","5-10d","10-15d","15-20d","20-25d","25-30d","30-35d","35-40d","40-45d","45-50d","50-55d","55-60d"];
-  const closedData      = [1320,2320,3900,1650,1470,1080,870,1150,1720,1180,650,480];
+  const closedData      = [41408,15127,20497,6279,5181,4880,2622,1610,731,285,246,217];
 
   const thresholdDays = 7;
 
@@ -373,10 +433,53 @@
     });
   }
 
+  // Stacked bar: backlog composition by status group
+  const compColors = { past:'#C9302C', agent:'#F0AD4E', within:'#3B7DBF', internal:'#9aa3ab' };
+  function makeStackedChart(ctx, labels, series, horizontal, axisLabel){
+    return new Chart(ctx, {
+      type: 'bar',
+      data: { labels: labels, datasets: [
+        { label:'Waiting on customer \u2014 past close deadline', data:series.past, backgroundColor:compColors.past },
+        { label:'Agent-owned', data:series.agent, backgroundColor:compColors.agent },
+        { label:'Waiting on customer \u2014 within deadline', data:series.within, backgroundColor:compColors.within },
+        { label:'Internal / partner dependency', data:series.internal, backgroundColor:compColors.internal }
+      ]},
+      options: {
+        indexAxis: horizontal ? 'y' : 'x',
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:'top', labels:{ font:{size:11}, boxWidth:14 } },
+          tooltip:{ callbacks:{ label:(c)=> c.dataset.label+': '+(horizontal?c.parsed.x:c.parsed.y).toLocaleString() } } },
+        scales:{
+          x:{ stacked:true, title:{ display:!horizontal, text:axisLabel, font:{size:13,weight:'bold'} },
+              ticks:{ font:{size:11}, callback: function(v){ return horizontal ? v.toLocaleString() : this.getLabelForValue(v); } } },
+          y:{ stacked:true, title:{ display:!horizontal, text:'Number of Open Tickets', font:{size:13,weight:'bold'} },
+              ticks:{ font:{size:11}, callback: function(v){ return horizontal ? this.getLabelForValue(v) : v.toLocaleString(); } } }
+        }
+      }
+    });
+  }
+
+  const backlogComp = {
+    labels: ["<7 days","7-30 days","30-60 days","60-90 days","90-180 days"],
+    past:    [22,728,795,824,3175],
+    agent:   [195,305,360,295,797],
+    within:  [1389,885,67,53,108],
+    internal:[7,38,19,12,81]
+  };
+
+  const subTeamComp = {
+    labels: ["Tier 1 CS","Tier 1 US","Tier 2 US Bravo","BEAST US","Tier 2 US Alpha","Tier 2 APAC","Tier 1 APAC",
+             "Tier 1 EMEA","Tier 2 US Charlie","Tier 3 US","Tier 2 Nordic","Tier 3 EMEA","Tier 2 DACH","Tier 3 APAC","Tier 2 UK"],
+    past:    [1535,963,697,697,623,281,194,145,176,158,13,28,0,29,5],
+    agent:   [1719,36,26,15,29,28,14,36,19,11,1,7,5,2,4],
+    within:  [439,706,197,167,164,156,208,147,147,37,46,20,40,10,18],
+    internal:[16,44,4,16,10,2,0,55,0,3,3,0,2,1,1]
+  };
+
   const subTeamBoxData = {
-    labels: ["Tier 2 US Bravo","Tier 3 APAC","Tier 3 US","Tier 2 US Alpha","BEAST US","Tier 1 CS",
-             "Tier 1 EMEA","Tier 1 APAC","Tier 2 APAC","Tier 1 US","Tier 2 Nordic","Tier 3 EMEA",
-             "Tier 2 US Charlie","Tier 2 UK","Tier 2 DACH"],
+    labels: ["Tier 3 APAC","Tier 2 US Bravo","Tier 3 US","Tier 2 US Alpha","BEAST US","Tier 1 CS",
+             "Tier 1 APAC","Tier 2 APAC","Tier 3 EMEA","Tier 1 EMEA","Tier 2 US Charlie","Tier 1 US",
+             "Tier 2 UK","Tier 2 Nordic","Tier 2 DACH"],
     datasets: [{
       label: "Ticket Age (days)",
       backgroundColor: "rgba(59,125,191,0.6)",
@@ -385,35 +488,36 @@
       outlierColor: "#C9302C",
       itemRadius: 2,
       data: [
-        {min:0.7, q1:31.9, median:99.9, q3:134.9, max:179.6},
-        {min:0.6, q1:37.2, median:96.3, q3:126.1, max:171.6},
-        {min:0.7, q1:54.4, median:94.9, q3:142.9, max:178.8},
-        {min:0.5, q1:10.9, median:93.0, q3:129.8, max:179.2},
-        {min:0.7, q1:28.9, median:86.3, q3:129.0, max:179.3},
-        {min:0.7, q1:25.1, median:76.8, q3:120.1, max:179.1},
-        {min:0.6, q1:8.2, median:58.5, q3:122.3, max:179.2},
-        {min:0.5, q1:6.5, median:42.6, q3:99.3, max:178.7},
-        {min:0.5, q1:8.7, median:38.6, q3:129.3, max:179.6},
-        {min:0.5, q1:7.0, median:25.0, q3:87.8, max:179.2},
-        {min:0.5, q1:4.3, median:24.0, q3:95.2, max:160.4},
-        {min:0.9, q1:7.1, median:16.6, q3:112.2, max:175.1},
-        {min:0.7, q1:6.8, median:11.0, q3:81.1, max:179.0},
-        {min:1.2, q1:4.2, median:7.2, q3:35.3, max:81.9},
-        {min:1.0, q1:2.2, median:2.7, q3:10.6, max:23.1}
+        {min:0.5, q1:63.5, median:124.6, q3:144.2, max:180.5},
+        {min:0.7, q1:26.6, median:107.5, q3:139.9, max:180.0},
+        {min:0.8, q1:49.8, median:105.9, q3:140.9, max:180.0},
+        {min:0.9, q1:19.2, median:92.1, q3:138.1, max:180.1},
+        {min:0.8, q1:30.5, median:90.9, q3:132.1, max:180.2},
+        {min:0.7, q1:28.9, median:76.9, q3:123.9, max:180.1},
+        {min:0.6, q1:7.5, median:57.6, q3:120.8, max:175.6},
+        {min:0.5, q1:11.5, median:50.2, q3:134.7, max:179.1},
+        {min:1.2, q1:7.3, median:33.9, q3:113.8, max:173.7},
+        {min:0.6, q1:7.1, median:21.2, q3:119.3, max:180.3},
+        {min:0.8, q1:6.0, median:20.1, q3:87.8, max:180.1},
+        {min:0.5, q1:6.2, median:19.2, q3:89.9, max:180.1},
+        {min:0.9, q1:5.0, median:7.6, q3:14.2, max:96.0},
+        {min:1.0, q1:5.6, median:7.3, q3:11.4, max:113.3},
+        {min:0.9, q1:4.2, median:5.8, q3:7.3, max:159.3}
       ]
     }]
   };
 
+  // Computed from full raw extract: agents with 20+ open tickets, sorted by median age.
   const bestAgents = {
-    labels: ["Ella Eckert","Hunter Buehl","Steven Vu","Zachary Cash","Dev Waghela","Danial Mir",
-             "Lawren Richardson","Steven Song","Vera Krapivner","Jennifer Erhart","Anthony Basmadjian","Jesus Bernal"],
-    data: [2.7,3.0,3.0,3.1,4.3,5.6,6.9,7.0,7.1,7.4,7.8,7.8]
+    labels: ["Dev Waghela","Ella Eckert","Danial Mir","Hunter Buehl","Anthony Basmadjian","Chris Marquez",
+             "Ruben Ruiz","Jennifer Erhart","Philip Sevilla","Steven Vu","Ian Cottingham-Ridley","Stephen Brown"],
+    data: [4.8,5.8,6.8,6.9,7.0,7.0,7.0,7.0,7.1,7.4,7.5,7.8]
   };
 
   const worstAgents = {
-    labels: ["Tristan Scharfenstein-Montgomery","Johnathan Riley","Marivel Flores","Jesse Douglas","Hannah Svraka",
-             "Gareth Williams","Matthew Prince","Grant Hoh","Eric Glady","Dave Pothier","Moses Morgutia","Carlin Beard"],
-    data: [140.9,121.8,118.0,114.9,112.0,109.0,106.0,100.7,100.1,99.0,96.4,96.3]
+    labels: ["Tristan Montgomery","Johnathan Riley","Carlin Beard","Marivel Flores","Matthew Prince",
+             "Jesse Douglas","Hannah Svraka","Benjamin Waldrop","Eric Glady","Dean Loukis-Grey","Gareth Mcpherson","Dave Pothier"],
+    data: [141.0,133.9,124.6,124.1,119.8,119.0,118.7,118.1,116.1,111.9,106.9,105.8]
   };
 
   const csatBuckets = ["0-2d","2-5d","5-7d","7-14d","14-30d","30-60d","60d+"];
@@ -425,6 +529,8 @@
     const closedThresholdIdx = findThresholdIndex(closedBinEdges, thresholdDays);
     makeBarChart(document.getElementById('openChart').getContext('2d'), openLabels, openData, '#3B7DBF', openThresholdIdx, 'Ticket Age So Far', 'Number of Open Tickets');
     makeBarChart(document.getElementById('closedChart').getContext('2d'), closedLabels, closedData, '#3B7DBF', closedThresholdIdx, 'Time to Close', 'Number of Closed Tickets');
+    makeStackedChart(document.getElementById('backlogCompChart').getContext('2d'), backlogComp.labels, backlogComp, false, 'Ticket Age So Far');
+    makeStackedChart(document.getElementById('subTeamCompChart').getContext('2d'), subTeamComp.labels, subTeamComp, true, '');
     makeBoxPlot(document.getElementById('subTeamBoxChart').getContext('2d'), subTeamBoxData, thresholdDays);
     makeRankBarChart(document.getElementById('bestAgentChart').getContext('2d'), bestAgents.labels, bestAgents.data, '#3B7DBF', 'Median Ticket Age (days)');
     makeRankBarChart(document.getElementById('worstAgentChart').getContext('2d'), worstAgents.labels, worstAgents.data, '#C9302C', 'Median Ticket Age (days)');
