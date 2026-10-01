@@ -44,7 +44,7 @@
     <div class="tag">Operational Analytics &middot; Tech Support</div>
     <h1>Ticket Health: Open Backlog &amp; Time-to-Close</h1>
     <p style="font-size:0.55em; color:var(--sub); max-width:70%;">A distribution-based review of how long Tech Support tickets stay open, and how long they take to close, measured against the stated 7-day auto-close policy.</p>
-    <div class="scope">Prepared by Matt Bagshaw &middot; Working draft for Brad &amp; Teri review &middot; Not yet presented to COO</div>
+    <div class="scope">Prepared by Matt Bagshaw — Operational Analytics Manager </div>
   </div>
 </section>
 
@@ -52,7 +52,9 @@
   <h2>The Question We're Testing</h2>
   <p>Concerns raised that the team may not be handling tickets correctly, specifically around closing them out or following up appropriately. We were told there is a policy: <b>tickets should auto-close at 7 days</b> if there's been no customer interaction (phone, email, or chat).</p>
   <p>This analysis tests that claim directly using ticket-level duration data, distinguishing between tickets still open today and tickets that have already closed.</p>
-  <div class="callout">If the 7-day policy is functioning as described, we should see a sharp drop-off in ticket volume right around day 7, both in what's currently open and in how long tickets take to close.</div>
+  <div class="callout">If the 7-day policy is functioning as described, we should see a sharp drop-off in ticket volume right around day 7, both in what's currently open and in how long tickets take to close.
+  
+  Sample Size:  180 days | 115K Cases</div>
 </section>
 
 <section>
@@ -63,8 +65,7 @@
     <li><b>Case object scope</b> &mdash; discovered other internal teams use the Salesforce Case object purely for their own queue management, unrelated to customer support. These were excluded.</li>
     <li><b>Window truncation</b> &mdash; early 30/90-day pulls artificially capped ticket age; extended to a 180-day window to capture the true tail.</li>
   </ul>
-  <p style="margin-top:14px;">Net effect: population narrowed to <b>Tech Support&ndash;created cases only</b>, removing roughly 74% of raw open-case volume that belonged to unrelated teams.</p>
-</section>
+  </section>
 
 <section>
   <h2>Open Tickets: Aging, Not Draining</h2>
