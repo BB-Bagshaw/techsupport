@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <title>Tech Support Ticket Health</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/white.css">
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/white.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@sgratzl/chartjs-chart-boxplot@4/build/index.umd.min.js"></script>
 <style>
@@ -36,250 +37,42 @@
   .note { font-size:0.4em; color:#999; margin-top:8px; }
   footer.slidefoot { position:absolute; bottom:8px; left:40px; font-size:0.35em; color:#aaa; }
 </style>
-</head>
+<style>#methodology-button{position:fixed;bottom:12px;left:15px;z-index:1000;padding:8px 12px;background:#17365d;color:white;border:0;border-radius:5px;font:13px Arial;cursor:pointer}#methodology-dialog{max-width:900px;width:85vw;max-height:80vh;overflow:auto;padding:28px;border:1px solid #aaa;border-radius:8px;font:16px/1.5 Arial;color:#223}#methodology-dialog::backdrop{background:rgba(0,0,0,.65)}#methodology-dialog h3{margin-top:24px}.reveal .note{font-size:.36em!important;line-height:1.4!important;margin-top:12px!important}.reveal .checklist li{margin-bottom:10px}.reveal section h2{font-size:1.15em}</style></head>
 <body>
 <div class="reveal">
 <div class="slides">
-
 <section>
-  <div class="cover">
-    <div class="tag">Operational Analytics &middot; Tech Support</div>
-    <h1>Ticket Health: Open Backlog &amp; Time-to-Close</h1>
-    <p style="font-size:0.55em; color:var(--sub); max-width:70%;">A distribution-based review of how long Tech Support tickets stay open, and how long they take to close, measured against the stated 7-day auto-close policy.</p>
-    <div class="scope">Prepared by Matt Bagshaw — Operational Analytics Manager </div>
-  </div>
+<div class="cover">
+<div class="tag">Operational Analytics · Tech Support</div>
+<h1>Ticket Health: Open Backlog &amp; Time-to-Close</h1>
+<p style="font-size:0.55em; color:var(--sub); max-width:70%;">A descriptive review of open-case inventory, observed closure durations, and satisfaction patterns, with closure-process hypotheses for validation.</p>
+<div class="scope">Prepared by Matt Bagshaw — Operational Analytics Manager </div>
+</div>
 </section>
-
-<section>
-  <h2>The Question We're Testing</h2>
-  <p>Concerns raised that the team may not be handling tickets correctly, specifically around closing them out or following up appropriately. We were told there is a policy: <b>tickets should auto-close at 7 days</b> if there's been no customer interaction (phone, email, or chat).</p>
-  <p>This analysis tests that claim directly using ticket-level duration data, distinguishing between tickets still open today and tickets that have already closed.</p>
-  <div class="callout">If the 7-day policy is functioning as described, we should see a sharp drop-off in ticket volume right around day 7, both in what's currently open and in how long tickets take to close.
-  <br><br>
-  Sample Size:  180 days (cases created Apr 2 &ndash; Sep 29, 2026) | 111K Cases</div>
-</section>
-
-<section>
-  <h2>Scope &amp; Data Quality Checks</h2>
-  <p>Before trusting the numbers, we validated the population being measured:</p>
-  <ul class="checklist">
-    <li><b>IsClosed vs. Status</b> &mdash; confirmed 100% agreement between the boolean flag and the categorical status field; no sync issues found.</li>
-    <li><b>Case object scope</b> &mdash; discovered other internal teams use the Salesforce Case object purely for their own queue management, unrelated to customer support. These were excluded.</li>
-    <li><b>Window truncation</b> &mdash; early 30/90-day pulls artificially capped ticket age; extended to a 180-day window to capture the true tail.</li>
-    <li><b>Full raw extract</b> &mdash; 110,926 valid cases (10,155 open / 100,771 closed); 0 duplicate Case IDs; 16 malformed export rows removed. Case duration reconciles exactly to Closed &minus; Created.</li>
-  </ul>
-  </section>
-
-<section>
-  <h2>Open Tickets: Aging, Not Draining</h2>
-  <div class="statline">
-    <b>10,155</b> open tickets &nbsp;&nbsp; Median age <b>67.1 days</b> &nbsp;&nbsp; P90 <b>152.9 days</b> &nbsp;&nbsp; <b>84.1%</b> exceed the 7-day policy &nbsp;&nbsp; 436 (4.3%) opened &lt;2 days ago
-  </div>
-  <div class="chart-wrap"><canvas id="openChart"></canvas></div>
-</section>
-
-<section>
-  <h2>What the Shape Tells Us</h2>
-  <p>If the auto-close policy were active, this histogram should show a cliff at day 7 and almost nothing surviving beyond it.</p>
-  <p>Instead, after an initial intake bump, volume settles into a <b>flat plateau of roughly 500&ndash;730 tickets per two-week interval</b>, sustained from around day 14 through day 180.</p>
-  <div class="kpi-row">
-    <div class="kpi red"><div class="val">84.1%</div><div class="lbl">of open tickets already past 7 days</div></div>
-    <div class="kpi red"><div class="val">67.1 days</div><div class="lbl">median age of the open backlog</div></div>
-  </div>
-  <p style="margin-top:10px;">Tickets aren't decaying out of the queue as they age &mdash; they're accumulating and stalling indefinitely once they miss the early window.</p>
-</section>
-
-<section>
-  <h2>Closed Tickets: Time-to-Close</h2>
-  <div class="statline">
-    <b>100,771</b> closed tickets &nbsp;&nbsp; Median <b>8.2 days</b> &nbsp;&nbsp; P90 <b>27.7 days</b> &nbsp;&nbsp; <b>54.0%</b> took longer than 7 days &nbsp;&nbsp; <b>7.3%</b> took longer than 30 days
-  </div>
-  <div class="chart-wrap"><canvas id="closedChart"></canvas></div>
-  <div class="note">Chart shows 0&ndash;60 days; 1,688 tickets (1.7%) took longer than 60 days to close and are not shown.</div>
-</section>
-
-<section>
-  <h2>Two Populations Hiding in One Metric</h2>
-  <div class="grid2">
-    <div>
-      <h3>Fast resolvers</h3>
-      <div class="kpi"><div class="val">36.7%</div><div class="lbl">closed within 48 hours (36,962 tickets)</div></div>
-      <p style="margin-top:8px;">Loosely tracks anecdotal first-touch resolution rates. Needs validation against the actual first-touch custom field.</p>
-    </div>
-    <div>
-      <h3>Stalled resolvers</h3>
-      <div class="kpi red"><div class="val">54.0%</div><div class="lbl">took longer than 7 days to close</div></div>
-      <p style="margin-top:8px;">Closures spike at days 6&ndash;7 and again at days 11&ndash;12. These peaks line up with a timed close process on the Waiting for Customer path (see next slides), not with agents working tickets to resolution.</p>
-    </div>
-  </div>
-</section>
-
-<section>
-  <h2>Putting It Together</h2>
-  <p>The 7-day rule is not missing &mdash; it is <b>partially automated and inconsistently applied</b>:</p>
-  <ul class="checklist">
-    <li>A meaningful share of tickets (roughly a third) do resolve quickly, consistent with genuine first-contact resolution.</li>
-    <li>A timed close process exists, but only on the <b>Waiting for Customer</b> path, and it misses a large share of eligible tickets.</li>
-    <li>Tickets in <b>Pending Closure</b> or <b>Assigned</b> have no working mechanism pulling them toward closure, and that's where the open-ticket plateau accumulates.</li>
-  </ul>
-  <div class="callout">This points toward a partially broken closure mechanism, rather than a simple team performance or compliance issue.</div>
-</section>
-
-<section>
-  <h2>An Auto-Close Exists &mdash; On One Path Only</h2>
-  <div class="kpi-row">
-    <div class="kpi"><div class="val">41%</div><div class="lbl">of all closures (41,369) last modified by a single system account</div></div>
-    <div class="kpi"><div class="val">99.8%</div><div class="lbl">of those closures came from the Waiting for Customer path</div></div>
-    <div class="kpi"><div class="val">74%</div><div class="lbl">had a warning email sent first (vs. 10% of manual closures)</div></div>
-  </div>
-  <ul class="checklist" style="margin-top:14px;">
-    <li>System closures cluster <b>5&ndash;7 and 9&ndash;14 calendar days</b> after a case moves to Waiting for Customer (&asymp;5 and &asymp;7&ndash;10 business days). In those windows, 83&ndash;94% of closures are by the system account.</li>
-    <li>The <b>IsReadyForAutoClose5Days</b> flag is 0 on all 110,926 records &mdash; unused or evaluated elsewhere.</li>
-  </ul>
-  <div class="callout">To confirm with a Salesforce admin: the system account's identity, the close criteria, and Case Field History showing who set each case to Closed.</div>
-</section>
-
-<section>
-  <h2>Where the Automation Falls Short</h2>
-  <div class="kpi-row">
-    <div class="kpi red"><div class="val">2,955</div><div class="lbl">in Waiting for Customer, past their 7-business-day deadline; only 13% got the warning email</div></div>
-    <div class="kpi red"><div class="val">2,589</div><div class="lbl">in Pending Closure, past their 2-business-day deadline; median 103 days in that status</div></div>
-    <div class="kpi amber"><div class="val">1,524</div><div class="lbl">Assigned to an agent; median age 78 days; no automation covers this status</div></div>
-  </div>
-  <ul class="checklist" style="margin-top:14px;">
-    <li>Only <b>999</b> closed cases ever passed through Pending Closure &mdash; fewer than the 2,718 sitting there today. That status has effectively become a dead end.</li>
-    <li>800 Pending Closure cases are already flagged <b>IsReadyForPendingClose2Days = 1</b> and remain open.</li>
-  </ul>
-</section>
-
-<section>
-  <h2>What the Open Backlog Actually Is</h2>
-  <div class="statline">
-    <b>10,155</b> open tickets &nbsp;&nbsp; <b>55%</b> waiting on a customer and past a system-defined close deadline &nbsp;&nbsp; only <b>19%</b> waiting on an agent
-  </div>
-  <div class="chart-wrap short"><canvas id="backlogCompChart"></canvas></div>
-  <div class="note">Past deadline = Waiting for Customer past 7 business days, or Pending Closure past 2 business days. Agent-owned = Assigned, Waiting for You, ReOpened, Needs Callback, New, Working. Internal = Waiting for Bluebeam/Partner, Research, Escalated, Jira Update.</div>
-</section>
-
-<section>
-  <h2>Most of the Backlog Isn't Agent Work</h2>
-  <ul class="checklist">
-    <li><b>5,544 tickets (55%)</b> are waiting on a customer and already past the system's own close deadline, with a median age of 99 days. Fixing the automation could clear them without any agent time.</li>
-    <li><b>3,175</b> of the 4,161 tickets over 90 days old are in this past-deadline group.</li>
-    <li><b>1,952 tickets (19%)</b> are agent-owned. Tier 1 CS holds 1,719 of them, and three owners hold 1,588 &mdash; volumes that suggest queue-holding accounts rather than individual workloads. To validate.</li>
-    <li><b>2,502 tickets (25%)</b> are waiting on a customer and still within their deadline &mdash; the process working as designed.</li>
-  </ul>
-  <div class="callout">The capacity question (next phase) should be tested against the <b>~2,000 agent-owned tickets</b>, not the full 10,155. Using the total would overstate the agent workload by roughly five times.</div>
-</section>
-
-<section>
-  <h2>Past-Deadline Tickets by Team</h2>
-  <div class="statline">
-    Open tickets by sub-team and status group &nbsp;&nbsp; Past-deadline share ranges from <b>0% (Tier 2 DACH)</b> to <b>78% (BEAST US)</b>
-  </div>
-  <div class="chart-wrap short"><canvas id="subTeamCompChart"></canvas></div>
-</section>
-
-<section>
-  <h2>Segmentation: Where the Stalling Concentrates</h2>
-  <div class="statline">
-    <b>15</b> sub-teams reviewed &nbsp;&nbsp; Overall open-ticket median <b>67.1 days</b> &nbsp;&nbsp; <b>13 of 15</b> teams exceed the 7-day target
-  </div>
-  <div class="chart-wrap"><canvas id="subTeamBoxChart"></canvas></div>
-  <div class="note">Computed directly from case-level export (n=10,155 open tickets). Log scale, red dashed line = 7-day target.</div>
-</section>
-
-<section>
-  <h2>Most Teams Miss the Target &mdash; But the Gap Isn't Uniform</h2>
-  <ul class="checklist">
-    <li>13 of 15 sub-teams have a median open-ticket age above the 7-day target, confirming this is a <b>systemic gap</b>, not one team's performance issue.</li>
-    <li><b>Tier 3 APAC (124.6d), Tier 2 US Bravo (107.5d), and Tier 3 US (105.9d)</b> carry the oldest backlogs.</li>
-    <li><b>Tier 2 DACH</b> is the exception: median age of <b>5.8 days</b> and none of its open tickets past a close deadline &mdash; proof the target is achievable under current tooling. Tier 2 Nordic (7.3d) and Tier 2 UK (7.6d) sit right at the line.</li>
-  </ul>
-  <div class="callout">Tall, inconsistent boxes (e.g. Tier 2 US Alpha, Tier 2 APAC) paired with very young outlier tickets suggest a <b>bimodal pattern</b>: new intake is handled reasonably, but a portion of the backlog stalls indefinitely and is never cleared.</div>
-</section>
-
-<section>
-  <h2>Best Backlog Health</h2>
-  <div class="statline">
-    Fastest 12 of 70 qualifying agents (20+ open tickets) by median open-ticket age &nbsp;&nbsp; Org median <b>67.1 days</b> &nbsp;&nbsp; 7-day target shown in red
-  </div>
-  <div class="chart-wrap"><canvas id="bestAgentChart"></canvas></div>
-  <div class="note">Proof point: the 7-day target is achievable today, under current tooling and staffing, by a meaningful group of agents.</div>
-</section>
-
-<section>
-  <h2>Worst Backlog Health</h2>
-  <div class="statline">
-    Slowest 12 of 70 qualifying agents by median open-ticket age &nbsp;&nbsp; Combined open backlog held by this group: <b>1,964</b> tickets
-  </div>
-  <div class="chart-wrap"><canvas id="worstAgentChart"></canvas></div>
-  <div class="callout">These 12 agents represent <b>17.1%</b> of qualifying headcount but hold <b>19.6%</b> of the total open backlog among agents with 20+ tickets.</div>
-</section>
-
-<section>
-  <h2>Case Data Is One Input, Not the Whole Picture</h2>
-  <ul class="checklist">
-    <li>This view reflects <b>ticket duration only</b>. It does not yet account for scheduled hours, time on phones, queue assignment complexity, or PTO/coverage gaps.</li>
-    <li>Partnering with <b>Business Process Management</b> to layer in workforce and scheduling data before drawing final conclusions on individual performance.</li>
-    <li>Goal: build a framework that separates <b>capacity/staffing problems</b> from <b>individual execution problems</b>, so the right fix gets applied to the right root cause.</li>
-  </ul>
-  <div class="scope">Case-level data establishes where the problem lives. Workforce data (next phase) will establish why.</div>
-</section>
-
-<section>
-  <h2>New Layer: Does Duration Affect Satisfaction?</h2>
-  <p>Beyond speed, we tested whether ticket age correlates with customer satisfaction (CSAT), using survey responses tied to Case ID on closed tickets.</p>
-  <div class="callout"><b>Data note (system latency):</b> CSAT-to-case match rate is 91.5% (2,371 of 2,590 survey responses). The ~8% gap is attributable to system latency between independently-refreshing case and survey extracts &mdash; both use a rolling 180-day window, but on different refresh schedules, so records near the boundary can fall inside one snapshot and outside the other at the moment of extraction. This is an expected characteristic of the current extraction method, not a linkage failure.  Final analysis will set a a distinct date range to align cases with survey results.</div>
-</section>
-
-<section>
-  <h2>CSAT Declines Sharply the Longer a Ticket Takes to Close</h2>
-  <div class="statline">
-    <b>2,371</b> closed, matched cases &nbsp;&nbsp; Org-wide CSAT (top-2-box) <b>76.2%</b> &nbsp;&nbsp; CSAT measured as score of 4-5 on a 1-5 scale
-  </div>
-  <div class="chart-wrap"><canvas id="csatDecayChart"></canvas></div>
-  <div class="note">Top-2-box CSAT (% scoring 4 or 5) on "overall support received," bucketed by time-to-close. Closed tickets only.</div>
-</section>
-
-<section>
-  <h2>Satisfaction Holds Steady, Then Collapses Past ~7 Days</h2>
-  <ul class="checklist">
-    <li>CSAT is stable and healthy through day 5 (<b>81.8%&ndash;82.7%</b>), then declines meaningfully starting at the <b>7-day policy threshold</b> (74.2%).</li>
-    <li>By 14&ndash;30 days, CSAT has nearly <b>halved</b> from its early-window level (52.8%), and continues falling to <b>41.2%</b> for tickets open 60+ days.</li>
-    <li>This is a threshold effect, not a gradual decline: the data supports the idea that the 7-day target isn't arbitrary &mdash; it appears to mark a real inflection point in customer patience.</li>
-  </ul>
-</section>
-
-<section>
-  <h2>Applying This to the Open Backlog</h2>
-  <div class="statline">
-    Closed-case CSAT-by-duration rates applied to <b>10,155</b> open tickets, grouped by current age
-  </div>
-  <div class="kpi-row">
-    <div class="kpi red"><div class="val">48.0%</div><div class="lbl">of the open backlog (~4,875 tickets) is projected to be dissatisfied if closed today</div></div>
-    <div class="kpi red"><div class="val">~2,460</div><div class="lbl">tickets of excess dissatisfaction risk vs. the org-wide average</div></div>
-  </div>
-  <p style="margin-top:10px;">Roughly <b>52.6%</b> of the entire open backlog (5,345 tickets) has already crossed 60 days &mdash; precisely the bucket with the lowest measured CSAT (41.2%). The backlog isn't just old; it's old in exactly the range where satisfaction has already collapsed.</p>
-  <div class="callout">This is a <b>modeled estimate</b>, not a measured fact. It assumes closed-case decay patterns transfer to currently open tickets, a reasonable but unproven assumption. CSAT rates are from the prior survey match and will be refreshed once survey data is aligned to the new date range.</div>
-</section>
-
-<section>
-  <h2>Next Steps</h2>
-  <ul class="checklist">
-    <li>Confirm with the Salesforce admin the <b>system account and close logic</b> on the Waiting for Customer path, and why 2,955 eligible tickets were missed.</li>
-    <li>Repair or define an exit for <b>Pending Closure</b>: 2,589 tickets are past their 2-business-day deadline.</li>
-    <li>Validate the <b>Tier 1 CS Assigned</b> concentration (1,588 tickets across three owners) as queue accounts or individual workloads.</li>
-    <li>Validate the 48-hour fast-close proxy against the true <b>first-touch resolution</b> custom field.</li>
-    <li>Pull Tier 2 DACH's workflow/staffing model as a benchmark case study for teams carrying the largest backlogs.</li>
-    <li>Test agent capacity (Calabrio / WebEx) against the <b>~2,000 agent-owned tickets</b>, not the full backlog.</li>
-  </ul>
-  <div class="scope">Working analysis based on Salesforce case data. Workforce and call-center data pending access.</div>
-</section>
-
+<section><h2>Purpose and Scope</h2><p>I reviewed the Nexus case cohort to describe open-case aging, observed closure times, status/deadline patterns, and customer satisfaction.</p><p>The reported seven-day inactivity rule is a validation question—not a universal seven-day case-age limit.</p><div class="callout">Creation-date cohort: Apr 2–Sep 29, 2026 • 110,926 cases • approximately six months</div><div class="note">Notes: separate cases open at extraction from cases already closed. The stated endpoints are 180 days apart but cover 181 dates if both full dates are included. Exact filter timestamps, time zone, and snapshot time must be documented. Older open cases outside the creation window are excluded.</div><aside class="notes">Notes: separate cases open at extraction from cases already closed. The stated endpoints are 180 days apart but cover 181 dates if both full dates are included. Exact filter timestamps, time zone, and snapshot time must be documented. Older open cases outside the creation window are excluded.</aside></section>
+<section><h2>Scope and Validation</h2><ul class="checklist"><li>Reported extract: 110,926 valid cases = 10,155 open + 100,771 closed.</li><li>Reported checks: zero duplicate Case IDs; 16 malformed rows removed; IsClosed/Status classification agrees.</li><li>Unrelated internal Case populations were excluded under the original scope rules.</li><li>Closed duration = ClosedDate − CreatedDate. Open age = snapshot time − CreatedDate.</li><li>The longer window reveals more aging, but does not capture cases created before the cohort.</li></ul><div class="note">Validation status: these are original analysis results, not independently rerun in this editorial revision. Retain query filters, status cross-tab, unique-ID checks, exclusion log, datetime conversion rules, snapshot timestamp, and duration reconciliation tolerance.</div><aside class="notes">Validation status: these are original analysis results, not independently rerun in this editorial revision. Retain query filters, status cross-tab, unique-ID checks, exclusion log, datetime conversion rules, snapshot timestamp, and duration reconciliation tolerance.</aside></section>
+<section><h2>Open-Case Age at Snapshot</h2><div class="statline">10,155 open cases in cohort • Median 67.1 days • P90 152.9 days<br/>84.1% older than seven calendar days • 436 (4.3%) younger than 48 hours</div><div class="chart-wrap"><canvas id="openChart"></canvas></div><div class="note">Notes: age = snapshot minus creation, expressed in elapsed days; statistics apply only to open cases in the creation-date cohort. Seven-day total age is not equivalent to seven days without customer interaction. Red histogram bin contains the seven-day reference; it is not a policy-breach indicator.</div><aside class="notes">Notes: age = snapshot minus creation, expressed in elapsed days; statistics apply only to open cases in the creation-date cohort. Seven-day total age is not equivalent to seven days without customer interaction. Red histogram bin contains the seven-day reference; it is not a policy-breach indicator.</aside></section>
+<section><h2>What the Age Distribution Shows</h2><ul class="checklist"><li>A substantial portion of analyzed cases remains open at advanced ages.</li><li>Many two-week age bins contain roughly 500–730 cases; the oldest bins fall outside that range.</li><li>The snapshot identifies aged inventory, not net accumulation over time or cases that will never close.</li><li>Closure-policy compliance must be tested against qualifying status/inactivity deadlines and exceptions—not total case age.</li></ul><div class="note">Notes: the embedded open histogram sums to 10,155. Intake volume differs across creation periods, so age-bin counts do not establish a survival rate. Time-series snapshots and intake denominators are needed to demonstrate growth or closure probabilities.</div><aside class="notes">Notes: the embedded open histogram sums to 10,155. Intake volume differs across creation periods, so age-bin counts do not establish a survival rate. Time-series snapshots and intake denominators are needed to demonstrate growth or closure probabilities.</aside></section>
+<section><h2>Observed Time-to-Close</h2><div class="statline">100,771 closed cases • Median 8.2 days • P90 27.7 days<br/>54.0% above seven days • 7.3% above thirty days</div><div class="chart-wrap"><canvas id="closedChart"></canvas></div><div class="note">Notes: ClosedDate minus CreatedDate for already-closed cases. Chart bins total 99,083; adding 1,688 cases above sixty days reconciles to 100,771. Open cases have unfinished durations; these closed-subset statistics do not estimate eventual closure time for the whole cohort.</div><aside class="notes">Notes: ClosedDate minus CreatedDate for already-closed cases. Chart bins total 99,083; adding 1,688 cases above sixty days reconciles to 100,771. Open cases have unfinished durations; these closed-subset statistics do not estimate eventual closure time for the whole cohort.</aside></section>
+<section><h2>Fast Closures and Longer Durations</h2><ul class="checklist"><li>36,962 closed cases (36.7%) closed within 48 hours. This is a fast-close measure, not confirmed first-contact resolution.</li><li>54.0% of closed cases took more than seven calendar days. Longer time can include customer waiting, investigation, and administrative delay.</li><li>Reported peaks around days 6–7 and 11–12 are consistent with timed administrative closure, but event history is needed to confirm attribution.</li></ul><div class="note">Notes: 36,962 / 100,771 = 36.7%. The embedded five-day histogram cannot independently resolve one-day peaks; retain the finer-bin analysis. Validate first-contact resolution using the actual field and interaction history.</div><aside class="notes">Notes: 36,962 / 100,771 = 36.7%. The embedded five-day histogram cannot independently resolve one-day peaks; retain the finer-bin analysis. Validate first-contact resolution using the actual field and interaction history.</aside></section>
+<section><h2>Closure-Process Hypotheses</h2><ul class="checklist"><li>Fast closures coexist with substantial aged open inventory.</li><li>System-account and status-timing patterns suggest automation-related activity concentrated around Waiting for Customer.</li><li>Aged Pending Closure inventory warrants review of exit rules and eligibility.</li><li>These findings identify apparent process gaps; they do not establish a broken mechanism or individual noncompliance.</li></ul><div class="note">Notes: combine descriptive duration, status, flags, and last-modifier associations. Confirm active flows/jobs, customer-interaction resets, status history, and exceptions with Business Systems before assigning root cause.</div><aside class="notes">Notes: combine descriptive duration, status, flags, and last-modifier associations. Confirm active flows/jobs, customer-interaction resets, status history, and exceptions with Business Systems before assigning root cause.</aside></section>
+<section><h2>System-Account Associations</h2><ul class="checklist"><li>41,369 closed cases (41.1%) were last modified by one account identified in the original analysis as a system account.</li><li>99.8% of that group had reported evidence of a Waiting for Customer path.</li><li>74% had a warning flag, compared with 10% in the comparison group.</li><li>Timing patterns are consistent with automation but do not identify the closure actor conclusively.</li></ul><div class="note">Notes: 41,369 / 100,771 = 41.1%. LastModifiedById identifies the latest modifier, not necessarily who changed status to Closed. Validate account identity, actual status-change events, path definitions, and warning timestamps. An all-zero readiness flag at extraction does not prove it is unused.</div><aside class="notes">Notes: 41,369 / 100,771 = 41.1%. LastModifiedById identifies the latest modifier, not necessarily who changed status to Closed. Validate account identity, actual status-change events, path definitions, and warning timestamps. An all-zero readiness flag at extraction does not prove it is unused.</aside></section>
+<section><h2>Deadline and Flag Review</h2><ul class="checklist"><li>2,955 Waiting for Customer cases exceeded the calculated seven-business-day threshold; 13% had the reported warning indicator.</li><li>2,589 Pending Closure cases exceeded the calculated two-business-day threshold; reported median time in status was 103 days.</li><li>800 open Pending Closure cases had the readiness flag set.</li><li>1,524 Assigned cases had median total age of 78 days.</li><li>999 closed cases had recorded evidence of Pending Closure versus 2,718 currently in that status.</li></ul><div class="note">Notes: status plus stored transition/deadline fields. Validate first versus latest transition, business calendars, timer resets, flag lifecycle, and eligibility exclusions. A missing warning flag is not proof no email was ever sent; populated transition fields are not complete lifecycle history.</div><aside class="notes">Notes: status plus stored transition/deadline fields. Validate first versus latest transition, business calendars, timer resets, flag lifecycle, and eligibility exclusions. A missing warning flag is not proof no email was ever sent; populated transition fields are not complete lifecycle history.</aside></section>
+<section><h2>Open Inventory by Status Group</h2><div class="statline">10,155 open cases • 5,544 (54.6%) past calculated customer-waiting/closure thresholds<br/>1,952 (19.2%) in agent-action statuses • 2,502 (24.6%) within calculated thresholds<br/>157 (1.5%) internal/other dependencies</div><div class="chart-wrap short"><canvas id="backlogCompChart"></canvas></div><div class="note">Notes: four mutually exclusive chart groups reconcile to 10,155. Agent-action statuses: Assigned, Waiting for You, ReOpened, Needs Callback, New, Working. Customer-waiting/closure groups use seven-business-day Waiting for Customer and two-business-day Pending Closure thresholds. Groups indicate status, not labor hours or proven closure eligibility.</div><aside class="notes">Notes: four mutually exclusive chart groups reconcile to 10,155. Agent-action statuses: Assigned, Waiting for You, ReOpened, Needs Callback, New, Working. Customer-waiting/closure groups use seven-business-day Waiting for Customer and two-business-day Pending Closure thresholds. Groups indicate status, not labor hours or proven closure eligibility.</aside></section>
+<section><h2>Inventory Is Not Labor Demand</h2><ul class="checklist"><li>5,544 cases exceeded calculated customer-waiting/closure thresholds; their reported median age was 99 days.</li><li>3,175 of 4,161 cases above ninety days (76.3%) were in that group.</li><li>1,952 cases were in agent-action statuses; Tier 1 CS held 1,719, with 1,588 across three owners. Validate whether those owners are queue-holding accounts.</li><li>Automation remediation may reduce administrative inventory after eligibility review; it is not necessarily effort-free.</li><li>Capacity analysis must include arrivals, closures, follow-up, investigations, escalations, and communications—not only a status snapshot.</li></ul><div class="note">Notes: 2,955 + 2,589 = 5,544; 3,175 / 4,161 = 76.3%. The full inventory is 5.2 times the agent-action-status count, but this ratio is not a workload multiplier. Other statuses may still require agent work.</div><aside class="notes">Notes: 2,955 + 2,589 = 5,544; 3,175 / 4,161 = 76.3%. The full inventory is 5.2 times the agent-action-status count, but this ratio is not a workload multiplier. Other statuses may still require agent work.</aside></section>
+<section><h2>Calculated Deadline Groups by Team</h2><div class="statline">Reported past-threshold share ranges from 0% (Tier 2 DACH) to approximately 78% (BEAST US)</div><div class="chart-wrap short"><canvas id="subTeamCompChart"></canvas></div><div class="note">Notes: past-threshold cases divided by all open cases in each team, using the embedded status groups. Compare only after validating shared status mappings, applicable business calendars, team assignment, and eligibility rules. This is a workflow-comparison lead, not a team-performance verdict.</div><aside class="notes">Notes: past-threshold cases divided by all open cases in each team, using the embedded status groups. Compare only after validating shared status mappings, applicable business calendars, team assignment, and eligibility rules. This is a workflow-comparison lead, not a team-performance verdict.</aside></section>
+<section><h2>Open-Case Age by Team</h2><div class="statline">15 sub-teams • Cohort-wide median 67.1 days<br/>14 of 15 embedded team medians exceed the seven-day age reference</div><div class="chart-wrap"><canvas id="subTeamBoxChart"></canvas></div><div class="note">Notes: embedded box-plot medians show 14 above seven days and DACH below; original text said 13 of 15. Corrected to match chart values, pending reconciliation to raw cases. Log scale limits displayed ages below 0.5 days; min/max display treatment and quantile method require documentation. Seven days is an age reference, not a universal SLA.</div><aside class="notes">Notes: embedded box-plot medians show 14 above seven days and DACH below; original text said 13 of 15. Corrected to match chart values, pending reconciliation to raw cases. Log scale limits displayed ages below 0.5 days; min/max display treatment and quantile method require documentation. Seven days is an age reference, not a universal SLA.</aside></section>
+<section><h2>Team Differences Need Context</h2><ul class="checklist"><li>The embedded medians indicate aged inventory across many teams—not proof of shared root cause.</li><li>Highest reported medians: Tier 3 APAC 124.6 days; Tier 2 US Bravo 107.5; Tier 3 US 105.9.</li><li>Tier 2 DACH: 5.8 days; Nordic: 7.3; UK: 7.6. DACH is a useful workflow comparator, not proof of equivalent staffing or case mix.</li><li>Broad age spreads warrant closer review. Box plots alone do not establish bimodality, ineffective intake handling, or cases that never close.</li></ul><div class="note">Notes: team medians and quartiles from embedded chart summaries. Validate team counts, case complexity, escalation mix, intake, transfers, ownership changes, and workforce context before comparing execution.</div><aside class="notes">Notes: team medians and quartiles from embedded chart summaries. Validate team counts, case complexity, escalation mix, intake, transfers, ownership changes, and workforce context before comparing execution.</aside></section>
+<section><h2>Lower Open-Case Age by Owner</h2><div class="statline">Lowest 12 medians among 70 qualifying current owners (20+ open cases)<br/>Cohort median: 67.1 days • Red line: seven-day age reference</div><div class="chart-wrap"><canvas id="bestAgentChart"></canvas></div><div class="note">Notes: group currently open cases by snapshot owner, retain owners with at least twenty cases, rank median age ascending. These are inventory-age rankings, not agent processing-speed or staffing-sufficiency rankings. Validate queue/shared/inactive accounts and historical ownership.</div><aside class="notes">Notes: group currently open cases by snapshot owner, retain owners with at least twenty cases, rank median age ascending. These are inventory-age rankings, not agent processing-speed or staffing-sufficiency rankings. Validate queue/shared/inactive accounts and historical ownership.</aside></section>
+<section><h2>Higher Open-Case Age by Owner</h2><div class="statline">Highest 12 medians among 70 qualifying current owners<br/>Combined inventory: 1,964 cases • 19.3% of all 10,155 open cohort cases</div><div class="chart-wrap"><canvas id="worstAgentChart"></canvas></div><div class="note">Notes: rank qualifying owners by median age descending. Twelve / seventy = 17.1% of qualifying owners; 1,964 / 10,155 = 19.3%. Original 19.6% used an undisclosed qualifying-owner denominator; replaced with the explicit full-cohort denominator. Current ownership does not establish responsibility for the full lifecycle.</div><aside class="notes">Notes: rank qualifying owners by median age descending. Twelve / seventy = 17.1% of qualifying owners; 1,964 / 10,155 = 19.3%. Original 19.6% used an undisclosed qualifying-owner denominator; replaced with the explicit full-cohort denominator. Current ownership does not establish responsibility for the full lifecycle.</aside></section>
+<section><h2>Case Data Needs Workload Context</h2><ul class="checklist"><li>Case age and status identify inventory patterns, not hours of agent effort or individual execution.</li><li>I will partner with Business Systems to validate closure-process findings and identify evidence-based improvements.</li><li>We have received access to Calabrio and Webex and are beginning early research into schedules, readiness, contacts, and coverage.</li><li>Email-based identity mapping and aligned dates will support agent-day comparisons; workload data will help test explanations, not guarantee a single cause.</li></ul><div class="note">Notes: next-phase plan, not a measured case-data result. Keep contact handling, queue coverage, case touches, planned absence, and team/role mix distinct. Align source time zones and historical identities before attribution.</div><aside class="notes">Notes: next-phase plan, not a measured case-data result. Keep contact handling, queue coverage, case touches, planned absence, and team/role mix distinct. Align source time zones and historical identities before attribution.</aside></section>
+<section><h2>Survey Match and Limitations</h2><p>Survey responses were matched to closed cases using Case ID to compare satisfaction across time-to-close groups.</p><div class="callout">2,371 of 2,590 responses matched (91.5%); 219 did not (8.5%). Boundary/refresh differences are a possible explanation—not a proven explanation for all unmatched records.</div><p>Rates remain provisional pending fixed-window alignment, unmatched-record review, and response-versus-unique-case validation.</p><div class="note">Notes: matched responses / input responses. Audit each unmatched reason, valid scores, duplicate responses, exclusions, case IDs, and snapshot times. Survey respondents may differ from nonrespondents; the matched sample should not be labeled organization-wide without population validation.</div><aside class="notes">Notes: matched responses / input responses. Audit each unmatched reason, valid scores, duplicate responses, exclusions, case IDs, and snapshot times. Survey respondents may differ from nonrespondents; the matched sample should not be labeled organization-wide without population validation.</aside></section>
+<section><h2>CSAT by Closure Duration</h2><div class="statline">2,371 matched observations • Matched-sample top-two-box CSAT: 76.2%<br/>Score 4–5 on the overall-support question; closed cases only</div><div class="chart-wrap"><canvas id="csatDecayChart"></canvas></div><div class="note">Notes: valid scores 4 or 5 / valid matched responses in each duration bucket. Embedded counts total 2,371; weighting rounded bucket rates gives 76.16%, consistent with 76.2%. Buckets: n = 1,529, 202, 97, 281, 193, 52, 17. The 60+ day estimate has only seventeen responses and should be treated cautiously.</div><aside class="notes">Notes: valid scores 4 or 5 / valid matched responses in each duration bucket. Embedded counts total 2,371; weighting rounded bucket rates gives 76.16%, consistent with 76.2%. Buckets: n = 1,529, 202, 97, 281, 193, 52, 17. The 60+ day estimate has only seventeen responses and should be treated cautiously.</aside></section>
+<section><h2>Longer Durations, Lower Observed CSAT</h2><ul class="checklist"><li>Top-two-box rates were 81.8% at 0–2 days and 82.7% at 2–5 days; 74.2% in the 5–7-day bucket and 64.1% at 7–14 days.</li><li>Rates were 52.8% at 14–30 days, 51.9% at 30–60 days, and 41.2% at 60+ days.</li><li>The fall from roughly 82% to 52.8% is about 29 percentage points—not a halving.</li><li>The pattern is an association. It does not prove a seven-day breakpoint, causation, or equivalent case mix across buckets.</li></ul><div class="note">Notes: compare bucket-level response proportions. Retain counts and add uncertainty intervals in a future refresh. Complexity, severity, outcome, team, survey selection, and timing may influence both duration and satisfaction. The oldest group has n=17.</div><aside class="notes">Notes: compare bucket-level response proportions. Retain counts and add uncertainty intervals in a future refresh. Complexity, severity, outcome, team, survey selection, and timing may influence both duration and satisfaction. The oldest group has n=17.</aside></section>
+<section><h2>Illustrative Open-Case Scenario</h2><div class="statline">Provisional closed-case survey rates applied to open-case age groups</div><ul class="checklist"><li>48.0% below top-two-box satisfaction under the scenario: approximately 4,875 case-equivalent outcomes.</li><li>Approximately 2,460 additional below-top-two-box outcomes versus the matched-sample baseline.</li><li>5,345 open cases (52.6%) are over sixty days old; their actual customer satisfaction is not measured here.</li><li>This is an illustrative transfer scenario, not a measured forecast. Scores below 4 include midpoint responses and should not all be labeled dissatisfied.</li></ul><div class="note">Notes: sum open counts in each matching age bucket × (1 − closed-case bucket CSAT); divide by 10,155. Excess = scenario total − 10,155 × (1 − 0.762). 48% implies about 4,874 and 2,458 excess using rounded inputs. Exact 48% cannot be reproduced from the coarser embedded open bins; retain original aligned bucket table before validating this scenario. Future duration, population differences, survey bias, and sparse old-duration responses limit inference.</div><aside class="notes">Notes: sum open counts in each matching age bucket × (1 − closed-case bucket CSAT); divide by 10,155. Excess = scenario total − 10,155 × (1 − 0.762). 48% implies about 4,874 and 2,458 excess using rounded inputs. Exact 48% cannot be reproduced from the coarser embedded open bins; retain original aligned bucket table before validating this scenario. Future duration, population differences, survey bias, and sparse old-duration responses limit inference.</aside></section>
+<section><h2>Validation and Next Steps</h2><ul class="checklist"><li>Partner with Business Systems to review active auto-close rules, eligibility, timer resets, system-account identity, and status-change history.</li><li>Review the 2,955 Waiting for Customer and 2,589 Pending Closure threshold cases; investigate the 800 flagged open cases before proposing remediation.</li><li>Validate concentrated ownership and queue accounts; use DACH as a workflow-comparison lead.</li><li>Align fixed case/survey windows, audit unmatched responses, and validate first-contact resolution using interaction evidence.</li><li>Continue early Calabrio/Webex research to add workload context without treating case inventory as labor demand.</li></ul><div class="note">Working analysis prepared by Matt Bagshaw. This revision improves language and clearer analysis notes; it does not independently recalculate the full source dataset. Figures remain tied to the original cohort/snapshot until the source refresh and validation are complete.</div><aside class="notes">Working analysis prepared by Matt Bagshaw. This revision improves language and clearer analysis notes; it does not independently recalculate the full source dataset. Figures remain tied to the original cohort/snapshot until the source refresh and validation are complete.</aside></section>
 </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.js"></script>
 <script>
   Reveal.initialize({ hash:true, width:1100, height:700, margin:0.06, controls:true, progress:true });
@@ -354,7 +147,7 @@
           ctx2.setLineDash([]);
           ctx2.fillStyle = '#C9302C';
           ctx2.font = 'bold 11px Segoe UI';
-          ctx2.fillText('7-day target', chart.chartArea.right - 80, yPixel - 6);
+          ctx2.fillText('7-day reference', chart.chartArea.right - 80, yPixel - 6);
           ctx2.restore();
         }
       }]
@@ -426,7 +219,7 @@
           ctx2.setLineDash([]);
           ctx2.fillStyle = '#5a5a5a';
           ctx2.font = 'italic 11px Segoe UI';
-          ctx2.fillText('Org avg: 76.2%', chart.chartArea.left + 5, yPixel - 6);
+          ctx2.fillText('Matched sample: 76.2%', chart.chartArea.left + 5, yPixel - 6);
           ctx2.restore();
         }
       }]
@@ -439,9 +232,9 @@
     return new Chart(ctx, {
       type: 'bar',
       data: { labels: labels, datasets: [
-        { label:'Waiting on customer \u2014 past close deadline', data:series.past, backgroundColor:compColors.past },
-        { label:'Agent-owned', data:series.agent, backgroundColor:compColors.agent },
-        { label:'Waiting on customer \u2014 within deadline', data:series.within, backgroundColor:compColors.within },
+        { label:'Waiting on customer \u2014 past calculated threshold', data:series.past, backgroundColor:compColors.past },
+        { label:'Agent-action statuses', data:series.agent, backgroundColor:compColors.agent },
+        { label:'Waiting on customer \u2014 within calculated threshold', data:series.within, backgroundColor:compColors.within },
         { label:'Internal / partner dependency', data:series.internal, backgroundColor:compColors.internal }
       ]},
       options: {
@@ -537,5 +330,5 @@
     makeCsatChart(document.getElementById('csatDecayChart').getContext('2d'), csatBuckets, csatPct, csatN);
   });
 </script>
-</body>
+<dialog id="methodology-dialog"><button onclick="this.closest('dialog').close()" style="float:right">Close</button><h2>Analysis notes</h2><p>Prepared by Matt Bagshaw. Editorial audit updated October 7, 2026. Figures are preserved from the supplied analysis except transparent corrections to embedded-chart counts and denominators; no full-source recomputation is claimed.</p><h3>Slide 2: Purpose and Scope</h3><p>Notes: separate cases open at extraction from cases already closed. The stated endpoints are 180 days apart but cover 181 dates if both full dates are included. Exact filter timestamps, time zone, and snapshot time must be documented. Older open cases outside the creation window are excluded.</p><h3>Slide 3: Scope and Validation</h3><p>Validation status: these are original analysis results, not independently rerun in this editorial revision. Retain query filters, status cross-tab, unique-ID checks, exclusion log, datetime conversion rules, snapshot timestamp, and duration reconciliation tolerance.</p><h3>Slide 4: Open-Case Age at Snapshot</h3><p>Notes: age = snapshot minus creation, expressed in elapsed days; statistics apply only to open cases in the creation-date cohort. Seven-day total age is not equivalent to seven days without customer interaction. Red histogram bin contains the seven-day reference; it is not a policy-breach indicator.</p><h3>Slide 5: What the Age Distribution Shows</h3><p>Notes: the embedded open histogram sums to 10,155. Intake volume differs across creation periods, so age-bin counts do not establish a survival rate. Time-series snapshots and intake denominators are needed to demonstrate growth or closure probabilities.</p><h3>Slide 6: Observed Time-to-Close</h3><p>Notes: ClosedDate minus CreatedDate for already-closed cases. Chart bins total 99,083; adding 1,688 cases above sixty days reconciles to 100,771. Open cases have unfinished durations; these closed-subset statistics do not estimate eventual closure time for the whole cohort.</p><h3>Slide 7: Fast Closures and Longer Durations</h3><p>Notes: 36,962 / 100,771 = 36.7%. The embedded five-day histogram cannot independently resolve one-day peaks; retain the finer-bin analysis. Validate first-contact resolution using the actual field and interaction history.</p><h3>Slide 8: Closure-Process Hypotheses</h3><p>Notes: combine descriptive duration, status, flags, and last-modifier associations. Confirm active flows/jobs, customer-interaction resets, status history, and exceptions with Business Systems before assigning root cause.</p><h3>Slide 9: System-Account Associations</h3><p>Notes: 41,369 / 100,771 = 41.1%. LastModifiedById identifies the latest modifier, not necessarily who changed status to Closed. Validate account identity, actual status-change events, path definitions, and warning timestamps. An all-zero readiness flag at extraction does not prove it is unused.</p><h3>Slide 10: Deadline and Flag Review</h3><p>Notes: status plus stored transition/deadline fields. Validate first versus latest transition, business calendars, timer resets, flag lifecycle, and eligibility exclusions. A missing warning flag is not proof no email was ever sent; populated transition fields are not complete lifecycle history.</p><h3>Slide 11: Open Inventory by Status Group</h3><p>Notes: four mutually exclusive chart groups reconcile to 10,155. Agent-action statuses: Assigned, Waiting for You, ReOpened, Needs Callback, New, Working. Customer-waiting/closure groups use seven-business-day Waiting for Customer and two-business-day Pending Closure thresholds. Groups indicate status, not labor hours or proven closure eligibility.</p><h3>Slide 12: Inventory Is Not Labor Demand</h3><p>Notes: 2,955 + 2,589 = 5,544; 3,175 / 4,161 = 76.3%. The full inventory is 5.2 times the agent-action-status count, but this ratio is not a workload multiplier. Other statuses may still require agent work.</p><h3>Slide 13: Calculated Deadline Groups by Team</h3><p>Notes: past-threshold cases divided by all open cases in each team, using the embedded status groups. Compare only after validating shared status mappings, applicable business calendars, team assignment, and eligibility rules. This is a workflow-comparison lead, not a team-performance verdict.</p><h3>Slide 14: Open-Case Age by Team</h3><p>Notes: embedded box-plot medians show 14 above seven days and DACH below; original text said 13 of 15. Corrected to match chart values, pending reconciliation to raw cases. Log scale limits displayed ages below 0.5 days; min/max display treatment and quantile method require documentation. Seven days is an age reference, not a universal SLA.</p><h3>Slide 15: Team Differences Need Context</h3><p>Notes: team medians and quartiles from embedded chart summaries. Validate team counts, case complexity, escalation mix, intake, transfers, ownership changes, and workforce context before comparing execution.</p><h3>Slide 16: Lower Open-Case Age by Owner</h3><p>Notes: group currently open cases by snapshot owner, retain owners with at least twenty cases, rank median age ascending. These are inventory-age rankings, not agent processing-speed or staffing-sufficiency rankings. Validate queue/shared/inactive accounts and historical ownership.</p><h3>Slide 17: Higher Open-Case Age by Owner</h3><p>Notes: rank qualifying owners by median age descending. Twelve / seventy = 17.1% of qualifying owners; 1,964 / 10,155 = 19.3%. Original 19.6% used an undisclosed qualifying-owner denominator; replaced with the explicit full-cohort denominator. Current ownership does not establish responsibility for the full lifecycle.</p><h3>Slide 18: Case Data Needs Workload Context</h3><p>Notes: next-phase plan, not a measured case-data result. Keep contact handling, queue coverage, case touches, planned absence, and team/role mix distinct. Align source time zones and historical identities before attribution.</p><h3>Slide 19: Survey Match and Limitations</h3><p>Notes: matched responses / input responses. Audit each unmatched reason, valid scores, duplicate responses, exclusions, case IDs, and snapshot times. Survey respondents may differ from nonrespondents; the matched sample should not be labeled organization-wide without population validation.</p><h3>Slide 20: CSAT by Closure Duration</h3><p>Notes: valid scores 4 or 5 / valid matched responses in each duration bucket. Embedded counts total 2,371; weighting rounded bucket rates gives 76.16%, consistent with 76.2%. Buckets: n = 1,529, 202, 97, 281, 193, 52, 17. The 60+ day estimate has only seventeen responses and should be treated cautiously.</p><h3>Slide 21: Longer Durations, Lower Observed CSAT</h3><p>Notes: compare bucket-level response proportions. Retain counts and add uncertainty intervals in a future refresh. Complexity, severity, outcome, team, survey selection, and timing may influence both duration and satisfaction. The oldest group has n=17.</p><h3>Slide 22: Illustrative Open-Case Scenario</h3><p>Notes: sum open counts in each matching age bucket × (1 − closed-case bucket CSAT); divide by 10,155. Excess = scenario total − 10,155 × (1 − 0.762). 48% implies about 4,874 and 2,458 excess using rounded inputs. Exact 48% cannot be reproduced from the coarser embedded open bins; retain original aligned bucket table before validating this scenario. Future duration, population differences, survey bias, and sparse old-duration responses limit inference.</p><h3>Slide 23: Validation and Next Steps</h3><p>Working analysis prepared by Matt Bagshaw. This revision improves language and clearer analysis notes; it does not independently recalculate the full source dataset. Figures remain tied to the original cohort/snapshot until the source refresh and validation are complete.</p></dialog><button id="methodology-button" onclick="document.getElementById('methodology-dialog').showModal()">Analysis notes</button></body>
 </html>
